@@ -115,7 +115,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,coeffs,proj
         
         fprintf(1,'      Template #%2i\n',i);
         
-        projections = (normalizedPeaks - repmat(means{i},N,1))*coeffs{i};
+        projections = bsxfun(@minus,normalizedPeaks,means{i})*coeffs{i};
                 
         likes(:,i) = findDataSetLikelihoods(projections,zeros(size(means{i})),projStds{i});
     end
