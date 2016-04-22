@@ -35,18 +35,21 @@ function [templates,allPeakIdx,allNormalizedPeaks,isNoise,scores,options] = crea
     end
     
     
-    if options.noiseLevel <= 0
-        fprintf(1,'   Finding Noise Level\n');
-        if numel(data) > 1e6
-            shortdata = data(1:1e6);
-        else
-            shortdata = data;
-        end
-        [ssf] = sinesongfinder(shortdata,options.fs,12,20,.1,.01,.05,[0 1000]); %returns ssf, which is structure containing the following fields
-        noise = findnoise(ssf,3,80,1000);
-        options.noiseLevel = noise.sigma;
-    end
-    
+%     if options.noiseLevel <= 0
+%         fprintf(1,'   Finding Noise Level\n');
+%         if numel(data) > 1e6
+%             shortdata = data(1:1e6);
+%         else
+%             shortdata = data;
+%         end
+%         [ssf] = sinesongfinder(shortdata,options.fs,12,20,.1,.01,.05,[0 1000]); %returns ssf, which is structure containing the following fields
+%         noise = findnoise(ssf,3,80,1000);
+%         options.noiseLevel = noise.sigma;
+%     end
+
+    options.noiseLevel = quantile(data,.95);
+    options.sigmaThreshold = 1;
+
     
     fprintf(1,'   Finding Preliminary Peak Locations\n');
     [normalizedPeaks,peakIdx,~] = ...
