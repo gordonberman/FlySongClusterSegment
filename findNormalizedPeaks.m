@@ -1,4 +1,4 @@
-function [normalizedPeaks,peakIdx,data] = findNormalizedPeaks(data,s,threshold,diffThreshold,smoothSigma,maxNumber)
+function [normalizedPeaks,peakIdx,data,amplitudes] = findNormalizedPeaks(data,s,threshold,diffThreshold,smoothSigma,maxNumber)
 
     
     if nargin < 3 || isempty(threshold)
@@ -32,10 +32,11 @@ function [normalizedPeaks,peakIdx,data] = findNormalizedPeaks(data,s,threshold,d
     
     
     normalizedPeaks = zeros(L,2*diffThreshold+1);
+    amplitudes = zeros(L,1);
     for i=1:L
         normalizedPeaks(i,:) = data(peakIdx(i)-diffThreshold:peakIdx(i)+diffThreshold);
-        normalizedPeaks(i,:) = normalizedPeaks(i,:) ./ (sum(normalizedPeaks(i,:).^2)).^(1/2);
-        
+        amplitudes(i) = sqrt(sum(normalizedPeaks(i,:).^2));
+        normalizedPeaks(i,:) = normalizedPeaks(i,:) ./ amplitudes(i);
         if data(peakIdx(i)) < 0
             normalizedPeaks(i,:) = - normalizedPeaks(i,:);
         end

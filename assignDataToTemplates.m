@@ -1,11 +1,11 @@
-function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,coeffs,projStds,baselines] = ...
-                     assignDataToTemplates(data,templates,isNoise,options)
+function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
+                     assignDataToTemplates(data,outputData,options)
 
                  
     %Inputs:
                  
     %data -> 1-D array of data points
-    %templates -> L x 1 cell array containing M_i x d arrays of template peaks
+    %outputData -> structure containing information about templates
     %options -> self-explanatory
 
     
@@ -26,6 +26,13 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,coeffs,proj
     
     addpath(genpath('./chronux'))
     
+    templates = outputData.templates;
+    projStds = outputData.projStds;
+    coeffs = outputData.coeffs;
+    means = outputData.means;
+    baselines = outputData.baselines;
+    isNoise = outputData.isNoise;
+    
     L = length(templates);
     d = length(templates{1}(1,:));
        
@@ -36,21 +43,20 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,coeffs,proj
     end
     options = makeDefaultOptions(options);
     options.diffThreshold = (d-1) / 2;
-    
-    if options.noiseLevel <= 0
+
+    %finds the noise level for the data set 
+    if options.noiseLevel < 0
+        
         fprintf(1,'   Finding Noise Level\n');
-        if numel(data) > 1e6
+        if length(data) > 1e6
             shortdata = data(1:1e6);
         else
             shortdata = data;
         end
-        if options.smoothSigma > 0
-            shortdata = gaussianfilterdata(shortdata,options.smoothSigma);
-        end
-        [ssf] = sinesongfinder(shortdata,options.fs,12,20,.1,.01,.05,[0 1000]);
-        %returns ssf, which is structure containing the following fields
-        noise = findnoise(ssf,3,80,1000);
-        options.noiseLevel = noise.sigma;
+        
+        out = returnShuffledPhaseData(shortdata);
+        options.noiseLevel = std(out);
+        
     end
     
     %find all potential peaks in the new data set
@@ -63,50 +69,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,coeffs,proj
     allPeakIdx = peakIdx;
     allNormalizedPeaks = normalizedPeaks;
     
-    
-    
-    fprintf(1,'   Finding Template Bases and Projections\n');
-    coeffs = cell(L,1);
-    projStds = cell(L,1);
-    means = cell(L,1);
-    L_templates = zeros(L,1);
-    
-    for i=1:L
-        
-        fprintf(1,'      Template #%2i\n',i);
-        L_templates(i) = length(templates{i}(:,1));
-        
-        %find Data Set Mean
-        means{i} = mean(templates{i});
-    
-        %perform PCA on set of normalized peaks
-        [coeffs{i},scores,~] = princomp(templates{i});
-        
-        projStds{i} = std(scores);
-    end
-    
-    
-    %adjust bases sets for sub-sampled data sets
-    minLength = min(L_templates);
-    if minLength < 2*d
-        q = round(minLength / 2);
-    else
-        q = d;
-    end
-    
-    for i=1:L
-        coeffs{i} = coeffs{i}(:,options.first_mode:q);
-        projStds{i} = projStds{i}(options.first_mode:q);
-    end
-    
-    %find baseline noise levels
-    fprintf(1,'   Calculating Baseline Noise Levels\n');
-    if options.use_likelihood_threshold
-        baselines = repmat(options.baseline_threshold,sum(~isNoise),1);
-    else
-        [baselines,~] = findTemplateBaselines(templates,coeffs,means,projStds,isNoise,options.baseline_quantile);
-    end
-        
+            
     %find likelihood values
     fprintf(1,'   Finding Likelihoods\n');
     likes = zeros(N,L);

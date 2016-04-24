@@ -1,4 +1,4 @@
-function [newTemplates,isNoise,splitted] = selectTemplates(templates,plotsOn)
+function [newTemplates,isNoise,splitted,newAmplitudes] = selectTemplates(templates,amplitudes,plotsOn)
     %interface for selecting templates from data
 
     if nargin < 2 || isempty(plotsOn)
@@ -19,7 +19,9 @@ function [newTemplates,isNoise,splitted] = selectTemplates(templates,plotsOn)
    
     
     newTemplates = cell(maxTemplates,1);
+    newAmplitudes = cell(maxTemplates,1);
     noiseTemplates = cell(maxTemplates,1);
+    noiseAmplitudes = cell(maxTemplates,1);
     isNoise = true(maxTemplates,1);
     count = 1;
     countNoise = 1;
@@ -47,12 +49,14 @@ function [newTemplates,isNoise,splitted] = selectTemplates(templates,plotsOn)
              
         if template_action == 'n'
             noiseTemplates{countNoise} = templates{i};
+            noiseAmplitudes{countNoise} = amplitudes{i};
             countNoise = countNoise + 1;
         end
         
         
         if template_action == 's'
             newTemplates{count} = templates{i};
+            newAmplitudes{count} = amplitudes{i};
             count = count + 1;
         end
         
@@ -60,8 +64,10 @@ function [newTemplates,isNoise,splitted] = selectTemplates(templates,plotsOn)
         if template_action == 'p'
             idx = kmeans(templates{i},2);
             newTemplates{count} = templates{i}(idx==1,:);
+            newAmplitudes{count} = amplitudes{i}(idx==1);
             count = count + 1;
             newTemplates{count} = templates{i}(idx==2,:);
+            newAmplitudes{count} = amplitudes{i}(idx==2);
             count = count + 1;
             splitted = true;
         end
@@ -74,10 +80,14 @@ function [newTemplates,isNoise,splitted] = selectTemplates(templates,plotsOn)
     close 1101
     
     newTemplates = newTemplates(1:count-1);
+    newAmplitudes = newAmplitudes(1:count-1);
     isNoise(1:count-1) = false;
     
     noiseTemplates = noiseTemplates(1:countNoise-1);
+    noiseAmplitudes = noiseAmplitudes(1:countNoise-1);
+    
     newTemplates = [newTemplates; noiseTemplates];
+    newAmplitudes = [newAmplitudes; noiseAmplitudes];
     isNoise = isNoise(1:length(newTemplates));
     
     

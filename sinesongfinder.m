@@ -22,7 +22,7 @@
 %addpath chronux\spectral_analysis\continuous\
 
 function SSF=sinesongfinder(d,fs,NW,K,dT,dS,pval,fwindow,reduced_memory)
-pool = exist('matlabpool','file');
+%pool = exist('matlabpool','file');
 if nargin < 9
     reduced_memory = 0;
 end
@@ -60,6 +60,8 @@ for k=1:kk
     [Fval(:,k),A(:,k),~,~,~] = ftestc(d(pos(k):(pos(k)+dT2-1)),params,pval/dT2,'n');
 end
 t=(0:(size(Fval,2)-1))*dS2/fs;
+
+
 
 events_cell = cell(size(Fval,2),1);
 % if pool~=0%if multicore capability exists, then use
