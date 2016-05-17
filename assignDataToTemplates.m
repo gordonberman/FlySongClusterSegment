@@ -36,7 +36,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
     L = length(templates);
     d = length(templates{1}(1,:));
        
-    if nargin < 4 || isempty(options)
+    if nargin < 3 || isempty(options)
         options.setAll = true;
     else
         options.setAll = false;
