@@ -101,7 +101,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
         
         i = notNoise(q);
         
-        idx2 = find(idx==i & belowThreshold(:,i));
+        idx2 = find(idx==i & belowThreshold(:,q));
         if ~isempty(idx2)
             for j=1:length(idx2)
                 
