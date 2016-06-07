@@ -1,4 +1,5 @@
-function [normalizedPeaks,peakIdx,data,amplitudes] = findNormalizedPeaks(data,s,threshold,diffThreshold,smoothSigma,maxNumber)
+function [normalizedPeaks,peakIdx,data,amplitudes] = ...
+    findNormalizedPeaks(data,s,threshold,diffThreshold,smoothSigma,maxNumber,minNoiseLevel)
 
     
     if nargin < 3 || isempty(threshold)
@@ -13,6 +14,10 @@ function [normalizedPeaks,peakIdx,data,amplitudes] = findNormalizedPeaks(data,s,
         smoothSigma = 5;
     end
     
+    if nargin < 7 || isempty(minNoiseLevel)
+        minNoiseLevel = 0;
+    end
+    
     if smoothSigma > 0
         fprintf(1,'   Filtering Data\n');
         data = gaussianfilterdata(data,smoothSigma);
@@ -24,7 +29,11 @@ function [normalizedPeaks,peakIdx,data,amplitudes] = findNormalizedPeaks(data,s,
         maxNumber = N;
     end
     
-    
+    if s*threshold < minNoiseLevel
+        s = 1;
+        threshold = minNoiseLevel;
+    end
+        
     peakIdx = findWaveformPeaks(data,s,threshold,diffThreshold,maxNumber);
     peakIdx = peakIdx(peakIdx > diffThreshold & peakIdx < N - diffThreshold);
     peakIdx = peakIdx(data(peakIdx - diffThreshold) ~= 0 & data(peakIdx + diffThreshold) ~= 0);

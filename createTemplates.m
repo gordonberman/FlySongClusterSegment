@@ -54,7 +54,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     fprintf(1,'   Finding Preliminary Peak Locations\n');
     [normalizedPeaks,peakIdx,~,peakAmplitudes] = ...
         findNormalizedPeaks(data,options.noiseLevel,options.sigmaThreshold,...
-        options.diffThreshold,options.smoothSigma);
+        options.diffThreshold,options.smoothSigma,[],options.minNoiseLevel);
     
     
     [~,scores,~] = princomp(normalizedPeaks);
