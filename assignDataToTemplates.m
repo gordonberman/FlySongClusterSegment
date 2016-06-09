@@ -36,7 +36,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
     L = length(templates);
     d = length(templates{1}(1,:));
        
-    if nargin < 4 || isempty(options)
+    if nargin < 3 || isempty(options)
         options.setAll = true;
     else
         options.setAll = false;
@@ -63,7 +63,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
     fprintf(1,'   Finding Preliminary Peak Locations\n');
     [normalizedPeaks,peakIdx,~] = ...
         findNormalizedPeaks(data,options.noiseLevel,options.sigmaThreshold,...
-        options.diffThreshold,options.smoothSigma);
+        options.diffThreshold,options.smoothSigma,[],options.minNoiseLevel);
     
     N = length(normalizedPeaks(:,1));
     allPeakIdx = peakIdx;
@@ -101,7 +101,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
         
         i = notNoise(q);
         
-        idx2 = find(idx==i & belowThreshold(:,i));
+        idx2 = find(idx==i & belowThreshold(:,q));
         if ~isempty(idx2)
             for j=1:length(idx2)
                 

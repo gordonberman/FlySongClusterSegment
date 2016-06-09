@@ -11,6 +11,8 @@ function options = makeDefaultOptions(options)
     
     %noiseLevel -> noise level (default = .005)
     
+    %minNoiseLevel -> minimum value for noise threshold (default = 0)
+    
     %template_pca_dimension -> # of modes in clustering PCA (default = 50)
     
     %first_mode -> first mode in the PCA to uselikelihood model (default = 5)
@@ -51,6 +53,7 @@ function options = makeDefaultOptions(options)
     min_template_size_default = 50;
     baseline_threshold_default = 0;
     use_likelihood_threshold_default = false;
+    minNoiseLevel_default = 0;
     
     
     
@@ -71,6 +74,7 @@ function options = makeDefaultOptions(options)
         options.min_template_size = min_template_size_default;
         options.baseline_threshold = baseline_threshold_default;
         options.use_likelihood_threshold = use_likelihood_threshold_default;
+        options.minNoiseLevel = minNoiseLevel_default;
                
     else
         
@@ -81,6 +85,11 @@ function options = makeDefaultOptions(options)
         
         if ~isfield(options,'sigmaThreshold') || isempty(options.sigmaThreshold)
             options.sigmaThreshold = sigmaThreshold_default;
+        end
+        
+        
+        if ~isfield(options,'minNoiseLevel') || isempty(options.minNoiseLevel)
+            options.minNoiseLevel = minNoiseLevel_default;
         end
         
         
