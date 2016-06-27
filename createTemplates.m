@@ -57,7 +57,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
         options.diffThreshold,options.smoothSigma,[],options.minNoiseLevel);
     
     
-    [~,scores,~] = princomp(normalizedPeaks);
+    [~,scores,~] = pca(normalizedPeaks);
     
     N = length(peakIdx);
     if N > options.maxNumPeaks
