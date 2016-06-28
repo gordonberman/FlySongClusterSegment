@@ -1,5 +1,5 @@
 function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores,options] = ...
-                                createTemplates(data,options,plotsOn)
+                                createTemplates(data,IPI_guess,options,plotsOn)
     
     %Inputs:
                  
@@ -22,16 +22,22 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     addpath(genpath('./chronux'))
 
     histogramBins = 100;
-    
         
-    if nargin < 2 || isempty(options)
+    if nargin < 3 || isempty(options)
         options.setAll = true;
     else
         options.setAll = false;
     end
     options = makeDefaultOptions(options);
 
-    if nargin < 3 || isempty(plotsOn)
+    if nargin < 2 || isempty(IPI_guess)
+       IPI_guess = 2*options.diffThreshold;
+    end
+    
+    
+    
+    
+    if nargin < 4 || isempty(plotsOn)
         plotsOn = true;
     end
     
@@ -49,12 +55,11 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
         options.noiseLevel = std(out);
         
     end
-
     
     fprintf(1,'   Finding Preliminary Peak Locations\n');
     [normalizedPeaks,peakIdx,~,peakAmplitudes] = ...
         findNormalizedPeaks(data,options.noiseLevel,options.sigmaThreshold,...
-        options.diffThreshold,options.smoothSigma,[],options.minNoiseLevel);
+        options.diffThreshold,options.highPassFilterFreq,[],options.minNoiseLevel);
     
     
     [~,scores,~] = pca(normalizedPeaks);

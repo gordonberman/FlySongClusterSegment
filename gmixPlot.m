@@ -46,13 +46,15 @@ function [obj,residuals,Z] = gmixPlot(X,N,MaxIter,bins,plotOFF,plotSubGaussians,
     end
     
     
-   
-        
     
-    [YY,XX] = hist(X,bins);
-    YY = YY ./ (sum(YY)*(XX(2) - XX(1)));
-    g = @(x) pdf(obj,x);
-    residuals = YY' - g(XX');
+    
+    if nargout > 1 || ~plotOFF
+        [YY,XX] = hist(X,bins);
+        YY = YY ./ (sum(YY)*(XX(2) - XX(1)));
+        g = @(x) pdf(obj,x);
+        residuals = YY' - g(XX');
+        Z = {XX,YY};
+    end
     
     
     if ~plotOFF
@@ -63,8 +65,16 @@ function [obj,residuals,Z] = gmixPlot(X,N,MaxIter,bins,plotOFF,plotSubGaussians,
             xlimits = [XX(1) XX(end)];
         end
         xx = linspace(xlimits(1),xlimits(2),1000);
-        
         hold on
+        
+        if plotSubGaussians && N > 1
+            g = @(x,mu,sigma,p) p*exp(-.5*(x-mu).^2./sigma^2)./sqrt(2*pi*sigma^2);
+            for i=1:N
+                plot(xx,g(xx,obj.mu(i),sqrt(obj.Sigma(i)),obj.PComponents(i)),'g-','linewidth',2)
+            end
+        end
+        
+        
         h = plot(xx,pdf(obj,xx'));
         set(h,'linewidth',2)
         set(h,'Color','r')
@@ -76,12 +86,7 @@ function [obj,residuals,Z] = gmixPlot(X,N,MaxIter,bins,plotOFF,plotSubGaussians,
         axis(xlimits);
         
         
-        if plotSubGaussians
-            g = @(x,mu,sigma,p) p*exp(-.5*(x-mu).^2./sigma^2)./sqrt(2*pi*sigma^2);
-            for i=1:N
-                plot(xx,g(xx,obj.mu(i),sqrt(obj.Sigma(i)),obj.PComponents(i)),'g-','linewidth',2)
-            end
-        end
+        
     end
 
-    Z = {XX,YY};
+    
