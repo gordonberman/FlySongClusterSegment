@@ -1,6 +1,8 @@
 function options = makeDefaultOptions(options)
 
-
+    %highPassFilterFreq -> Frequency for use in high-pass butterworth
+    %                       filter of data (default = 200 Hz)
+    
     %smoothSigma -> standard dev. of gaussian with which to smooth data,
     %               use -1 to have no smoothing (default = 5)
     
@@ -38,7 +40,8 @@ function options = makeDefaultOptions(options)
     %use_likelihood_threshold = logical to use baseline threshold or not (default = false)
     
     
-    smoothSigma_default = 3; 
+    highPassFilterFreq_default = 100;
+    %smoothSigma_default = 3; 
     sigmaThreshold_default = 2;
     diffThreshold_default = 150;
     noiseLevel_default = -1;
@@ -59,7 +62,7 @@ function options = makeDefaultOptions(options)
     
     if options.setAll
         
-        options.smoothSigma = smoothSigma_default;
+        %options.smoothSigma = smoothSigma_default;
         options.sigmaThreshold = sigmaThreshold_default;
         options.diffThreshold = diffThreshold_default;
         options.noiseLevel = noiseLevel_default;
@@ -75,13 +78,18 @@ function options = makeDefaultOptions(options)
         options.baseline_threshold = baseline_threshold_default;
         options.use_likelihood_threshold = use_likelihood_threshold_default;
         options.minNoiseLevel = minNoiseLevel_default;
+        options.highPassFilterFreq = highPassFilterFreq_default;
                
     else
         
-        if ~isfield(options,'smoothSigma') || isempty(options.smoothSigma)
-            options.smoothSigma = smoothSigma_default;
+        %         if ~isfield(options,'smoothSigma') || isempty(options.smoothSigma)
+        %             options.smoothSigma = smoothSigma_default;
+        %         end
+        
+        
+        if ~isfield(options,'highPassFilterFreq') || isempty(options.highPassFilterFreq)
+            options.highPassFilterFreq = highPassFilterFreq_default;
         end
-         
         
         if ~isfield(options,'sigmaThreshold') || isempty(options.sigmaThreshold)
             options.sigmaThreshold = sigmaThreshold_default;
