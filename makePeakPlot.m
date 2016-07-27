@@ -9,7 +9,12 @@ function makePeakPlot(data,peakIdxGroup,toPlot)
     %                   createTemplates.m
     %toPlot -> 1-D array of the templates to plot (i.e. [1 3 4 5])
 
-
+    
+    if nargin < 3 || isempty(toPlot)
+        toPlot = 1:length(peakIdxGroup);
+    end
+    
+    
     cs = 'r--k--g--m--c--r-.k-.g-.m-.c-.r-*k-*g-*m--c-*r-^k-^g-^m-^c-^';
    
     highVal = ceil(max(data)*2)/2;

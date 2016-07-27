@@ -10,7 +10,6 @@ function makeTemplateHistograms(templates,bins,means,ylimits)
 
     N = length(templates);
     d = length(templates{1}(1,:));
-    r = floor(d/2);
 
     if nargin < 2 || isempty(bins)
         bins = 50;
@@ -38,16 +37,15 @@ function makeTemplateHistograms(templates,bins,means,ylimits)
         for j=1:d
             Z(j,:) = hist(templates{i}(:,j),xx);
         end
-        Z = bsxfun(@rdivide,Z,sum(Z,2))/(xx(2)-xx(1));
+        Z = 
         
 
-        pcolor(-r:r,xx,Z');
+        pcolor(1:d,xx,Z');
         shading flat
         hold on
-        caxis([0 .02*diff(ylimits)])
         
         
-        plot(-r:r,means{i},'k-','linewidth',2)
+        plot(1:d,means{i},'k-','linewidth',2)
         title(['Template #' num2str(i) ', N = ' num2str(length(templates{i}(:,1)))]);
         
     end

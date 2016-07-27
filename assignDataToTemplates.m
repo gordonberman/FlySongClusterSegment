@@ -1,4 +1,4 @@
-function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
+function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThreshold] = ...
                      assignDataToTemplates(data,outputData,options)
 
                  
@@ -24,14 +24,13 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
     %projStds -> L x 1 cell array of model projection standard deviations
     
     
-    addpath(genpath('./chronux'))
+    addpath(genpath('./utilities/'));
+    addpath(genpath('./subroutines/'));
     
     templates = outputData.templates;
     projStds = outputData.projStds;
     coeffs = outputData.coeffs;
     means = outputData.means;
-    baselines = outputData.baselines;
-    isNoise = outputData.isNoise;
     
     L = length(templates);
     d = length(templates{1}(1,:));
@@ -41,31 +40,39 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
     else
         options.setAll = false;
     end
-    options = makeDefaultOptions(options);
-    options.diffThreshold = (d-1) / 2;
-
-    %finds the noise level for the data set 
-    if options.noiseLevel < 0
-        
-        fprintf(1,'   Finding Noise Level\n');
-        if length(data) > 1e6
-            shortdata = data(1:1e6);
-        else
-            shortdata = data;
-        end
-        
-        out = returnShuffledPhaseData(shortdata);
-        options.noiseLevel = std(out);
-        
-    end
+    options = makeParameterStructure(options);
+    
+    Fs = options.fs;
+   
     
     %find all potential peaks in the new data set
-    fprintf(1,'   Finding Preliminary Peak Locations\n');
-    [normalizedPeaks,peakIdx,~] = ...
-        findNormalizedPeaks(data,options.noiseLevel,options.sigmaThreshold,...
-        options.diffThreshold,options.highPassFilterFreq,[],options.minNoiseLevel);
+    fprintf(1,'   Finding Peak Locations\n');
+
+    diffThreshold = d;
+
+    maxNumGaussians_noise = options.maxNumGaussians_noise;
+    maxNumPeaks_GMM = options.maxNumPeaks;
+    replicates_GMM = options.replicates_GMM; 
+    smoothingLength_noise = options.smoothingLength_noise * Fs / 1000;
+    minRegionLength = round(options.minRegionLength * Fs / 1000);
+   
     
-    N = length(normalizedPeaks(:,1));
+    
+    [newData,~,noiseThreshold,peakIdx] = filterDataAmplitudes(data,...
+        smoothingLength_noise,minRegionLength,maxNumGaussians_noise,...
+        replicates_GMM,maxNumPeaks_GMM,diffThreshold);
+    
+    
+    N = length(peakIdx);
+    r = (diffThreshold-1)/2;
+    normalizedPeaks = zeros(N,diffThreshold);
+    peakAmplitudes = zeros(N,1);
+    for i=1:N
+        a = newData(peakIdx(i) + (-r:r));
+        peakAmplitudes(i) = sqrt(mean(a.^2));
+        normalizedPeaks(i,:) = a./peakAmplitudes(i).*sign(newData(peakIdx(i)));
+    end
+    
     allPeakIdx = peakIdx;
     allNormalizedPeaks = normalizedPeaks;
     
@@ -86,43 +93,8 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks] = ...
     clear projections 
     
     
+    %assign peaks to teh template with maximum likelihood
     [~,idx] = max(likes,[],2);
-    
-    %find assignments that are sub-baseline and assign them to to either
-    %the next super-baseline signal class or the largest noise class
-    fprintf(1,'   Checking Peaks Against Baseline\n');
-    notNoise = find(~isNoise);
-    %noiseVals = find(isNoise);
-    signalLikes = likes(:,~isNoise);
-    belowThreshold = signalLikes < repmat(baselines',length(idx),1);
-    %[sortVals,sortIdx] = sort(likes,2,'descend');
-    
-    for q=1:length(notNoise)
-        
-        i = notNoise(q);
-        
-        idx2 = find(idx==i & belowThreshold(:,q));
-        if ~isempty(idx2)
-            for j=1:length(idx2)
-                
-                qq = likes(idx2(j),notNoise);
-                qq(likes(idx2(j),notNoise) - baselines' < 0) = -10;
-                [maxVal,maxIdx] = max(qq);
-                if maxVal < 0
-                    idx(idx2(j)) = L + 1;
-                else
-                    idx(idx2(j)) = notNoise(maxIdx);
-                end
-                
-             
-            end
-        end
-    end
-    
-
-    if max(idx) == L+1
-        L = L+1;
-    end
     
     groupings = cell(L,1);
     peakIdxGroup = cell(L,1);

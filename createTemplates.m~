@@ -74,11 +74,11 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     
     %estimate width of IPI distribution
     halfMax_location = fzero(@(x) s(x)-peakValue/2,X(argmax(Y)));
-    halfMax_location = modeIPI_estimate - ...
+    halfMax_location_hald = modeIPI_estimate - ...
         num_IPI_halfWidths*abs(modeIPI_estimate-halfMax_location);
-    min_location = fminsearch(@(x) s(x),halfMax_location);
-    threshold_location = max(halfMax_location,min_location);
-    diffThreshold = floor(threshold_location*Fs);
+    halfMax_location_min = fminsearch(@(x) s(x),halfMax_location);
+    halfMax_location = max(halfMax_location,halfMax_location_min);
+    diffThreshold = floor(halfMax_location*Fs);
     
     %make sure that diffThreshold is an odd number of points
     if mod(diffThreshold,2) == 0
@@ -104,8 +104,6 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     %save output data
     outputData.noiseThreshold = noiseThreshold;
     outputData.diffThreshold = diffThreshold;
-    outputData.min_location = min_location;
-    outputData.halfMax_location = halfMax_location;
     outputData.modeIPI_estimate = modeIPI_estimate;
     outputData.IPI_width = abs(modeIPI_estimate-halfMax_location);
     if options.template_pca_dimension > min(diffThreshold,N-1)
