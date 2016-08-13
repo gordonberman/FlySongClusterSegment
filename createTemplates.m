@@ -44,6 +44,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     %load run parameters
     maxNumGaussians_noise = options.maxNumGaussians_noise;
     maxNumPeaks_GMM = options.maxNumPeaks;
+    maxNumPeaks = options.maxNumPeaks;
     replicates_GMM = options.replicates_GMM; 
     smoothingLength_noise = options.smoothingLength_noise * Fs / 1000;
     minRegionLength = round(options.minRegionLength * Fs / 1000);
@@ -95,6 +96,8 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);
     signs = sign(newData(peakIdx));
+    
+    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r);
     for i=1:N
         a = newData(peakIdx(i) + (-r:r));
         peakAmplitudes(i) = sqrt(mean(a.^2));
@@ -115,7 +118,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     [~,scores,~] = pca(normalizedPeaks);
     
     
-    if N > options.maxNumPeaks
+    if N > maxNumPeaks
         q = randperm(N);
         q = q(1:options.maxNumPeaks);
         normalizedPeaks = normalizedPeaks(q,:);
@@ -132,6 +135,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     
     fprintf(1,'   Clustering Peaks\n');
     kmeans_options = statset('MaxIter',options.kmeans_maxIter);
+           
     idx = kmeans(scores,options.k,'replicates',options.kmeans_replicates,'options',kmeans_options);
         
     templates = cell(options.k,1);
@@ -146,7 +150,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     isNoise = false(size(templates));
     
     
-    %uncomment this to allow for human annotattion of templates
+    %uncomment this to allow for human annotation of templates
     %     splitted = true;
     %     isNoise = false(size(templates));
     %     while splitted

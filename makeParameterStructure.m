@@ -16,7 +16,7 @@ function options = makeParameterStructure(options)
     
     %maximum # of peaks to use in clustering & GMM (default = 10000);
     maxNumPeaks = 10000;
-    
+        
     %# of replicates in kmeans (default = 5)
     kmeans_replicates = 5;
     
