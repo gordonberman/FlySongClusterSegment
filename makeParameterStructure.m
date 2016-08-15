@@ -49,13 +49,16 @@ function options = makeParameterStructure(options)
     %(default = .05)
     IPI_sigma = .05;
     
-    %number of FWHM widths if IPI distribution to set for diffThreshold
+    %number of FWHM widths of IPI distribution to set for diffThreshold
     %(default = 2)
-    num_IPI_halfWidths = 2;
+    num_IPI_halfWidths = 4;
     
     %percentage of peak amplitudes below the nosie threshold to be called a
     %"noise" template (default = .9)
     amplitude_threshold = .9;
+    
+    %minimum noise threshold (set to be negative to ignore, default = -1)
+    min_noise_threshold = -1;
     
     
     if ~isfield(options,'template_pca_dimension') || isempty(options.template_pca_dimension)
@@ -120,6 +123,10 @@ function options = makeParameterStructure(options)
     
     if ~isfield(options,'amplitude_threshold') || isempty(options.amplitude_threshold)
         options.amplitude_threshold = amplitude_threshold;
+    end
+    
+    if ~isfield(options,'min_noise_threshold') || isempty(options.min_noise_threshold)
+        options.min_noise_threshold = min_noise_threshold;
     end
     
     

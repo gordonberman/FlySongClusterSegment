@@ -36,9 +36,8 @@ function [out,mask,threshold,smoothedPeakLocations] = filterDataAmplitudes(...
     
     %find threshold and initial mask
     if nargin < 8 || isempty(threshold) || threshold < 0
-        threshold = -9e99;
+        threshold = -1;
     end
-    
     %gaussian mixture model for log(smoothed signal)
     obj = findBestGMM_AIC(y,maxNumGaussians,replicates,maxNumPoints);
     
@@ -52,12 +51,16 @@ function [out,mask,threshold,smoothedPeakLocations] = filterDataAmplitudes(...
     mask = (posts >= .5 | y > obj.mu(idx)) & y > obj.mu(minIdx);
     new_threshold = min(y(mask));
     
-    if new_threshold < threshold
-        mask = y > threshold;
-    else
-        threshold = new_threshold;
-    end
-        
+    if threshold
+    
+    
+    %     else
+    %
+    %         %find mask
+    %         mask = y > threshold;
+    
+    
+    
     %zero all connected components smaller than minLength
     CC = bwconncomp(mask);
     lengths = returnCellLengths(CC.PixelIdxList);

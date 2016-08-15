@@ -55,12 +55,15 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     replicates_GMM = options.replicates_GMM; 
     smoothingLength_noise = options.smoothingLength_noise * Fs / 1000;
     minRegionLength = round(options.minRegionLength * Fs / 1000);
-   
+    min_noise_threshold = options.min_noise_threshold;
+    if min_noise_threshold > 0
+        min_noise_threshold = log10(min_noise_threshold.^2);
+    end
     
     
     [newData,~,noiseThreshold,peakIdx] = filterDataAmplitudes(data,...
         smoothingLength_noise,minRegionLength,maxNumGaussians_noise,...
-        replicates_GMM,maxNumPeaks_GMM,diffThreshold);
+        replicates_GMM,maxNumPeaks_GMM,diffThreshold,min_noise_threshold);
     
     
     N = length(peakIdx);

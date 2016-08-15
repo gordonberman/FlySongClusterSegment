@@ -53,11 +53,16 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     num_IPI_halfWidths = options.num_IPI_halfWidths;
     amplitude_threshold = options.amplitude_threshold; 
     numIPIBins = 10000;
+    min_noise_threshold = options.min_noise_threshold;
+    if min_noise_threshold > 0
+        min_noise_threshold = log10(min_noise_threshold.^2);
+    end
     
     %find regions masked by pulse amplitude
     [~,~,noiseThreshold,smoothedPeakLocations] = ...
         filterDataAmplitudes(data,smoothingLength_noise,minRegionLength,...
-                        maxNumGaussians_noise,replicates_GMM,maxNumPeaks_GMM,-1);
+                        maxNumGaussians_noise,replicates_GMM,...
+                        maxNumPeaks_GMM,min_noise_threshold);
      
     %find IPIs                
     IPIs = diff(smoothedPeakLocations)/options.fs;
