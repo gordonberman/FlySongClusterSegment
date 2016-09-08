@@ -5,6 +5,9 @@ function options = makeParameterStructure(options)
     end
 
     
+    %run t-SNE embedding in createTemplates.m (default = false)
+    run_tsne = false;
+    
     %# of modes in clustering PCA (default = 50)
     template_pca_dimension  = 50;
     
@@ -59,6 +62,78 @@ function options = makeParameterStructure(options)
     
     %minimum noise threshold (set to be negative to ignore, default = -1)
     min_noise_threshold = -1;
+    
+    
+    
+    %%%%%%%% t-SNE options %%%%%%%%
+    
+    
+    %2^H (H is the transition entropy)
+    perplexity = 32;
+    
+    %relative convergence criterium for t-SNE
+    relTol = 1e-4;
+    
+    %number of dimensions for use in t-SNE
+    num_tsne_dim = 2;
+    
+    %binary search tolerance for finding pointwise transition region
+    sigmaTolerance = 1e-5;
+    
+    %maximum number of non-zero neighbors in P
+    maxNeighbors = 200;
+    
+    %initial momentum
+    momentum = .5;
+    
+    %value to which momentum is changed
+    final_momentum = 0.8;    
+    
+    %iteration at which momentum is changed
+    mom_switch_iter = 250;      
+    
+    %iteration at which lying about P-values is stopped
+    stop_lying_iter = 125;      
+    
+    %degree of P-value expansion at early iterations
+    lie_multiplier = 4;
+    
+    %maximum number of iterations
+    max_iter = 1000;  
+    
+    %initial learning rate
+    epsilon = 500;  
+    
+    %minimum gain for delta-bar-delta
+    min_gain = .01;   
+
+    %readout variable for t-SNE
+    tsne_readout = 10;
+    
+    %embedding batchsize
+    embedding_batchSize = 20000;
+    
+    %maximum number of iterations for the Nelder-Mead algorithm
+    maxOptimIter = 100;
+    
+    %number of points in the training set
+    trainingSetSize = 35000;
+    
+    %local neighborhood definition in training set creation
+    kdNeighbors = 5;
+    
+    %t-SNE training set stopping critereon
+    training_relTol = 2e-3;
+    
+    %t-SNE training set perplexity
+    training_perplexity = 20;
+    
+    %number of points to evaluate in each training set file
+    training_numPoints = 10000;
+    
+    %minimum training set template length
+    minTemplateLength = 1;
+    
     
     
     if ~isfield(options,'template_pca_dimension') || isempty(options.template_pca_dimension)
@@ -128,6 +203,120 @@ function options = makeParameterStructure(options)
     if ~isfield(options,'min_noise_threshold') || isempty(options.min_noise_threshold)
         options.min_noise_threshold = min_noise_threshold;
     end
+    
+    if ~isfield(options,'perplexity') || isempty(options.perplexity)
+        options.perplexity = perplexity;
+    end
+    
+    
+    if ~isfield(options,'relTol') || isempty(options.relTol)
+        options.relTol = relTol;
+    end
+    
+    
+    if ~isfield(options,'num_tsne_dim') || isempty(options.num_tsne_dim)
+        options.num_tsne_dim = num_tsne_dim;
+    end
+    
+    
+    if ~isfield(options,'sigmaTolerance') || isempty(options.sigmaTolerance)
+        options.sigmaTolerance = sigmaTolerance;
+    end
+    
+    
+    if ~isfield(options,'maxNeighbors') || isempty(options.maxNeighbors)
+        options.maxNeighbors = maxNeighbors;
+    end
+    
+    
+    if ~isfield(options,'momentum') || isempty(options.momentum)
+        options.momentum = momentum;
+    end
+    
+    
+    if ~isfield(options,'final_momentum') || isempty(options.final_momentum)
+        options.final_momentum = final_momentum;
+    end
+    
+    
+    if ~isfield(options,'mom_switch_iter') || isempty(options.mom_switch_iter)
+        options.mom_switch_iter = mom_switch_iter;
+    end
+    
+    
+    if ~isfield(options,'stop_lying_iter') || isempty(options.stop_lying_iter)
+        options.stop_lying_iter = stop_lying_iter;
+    end
+    
+    
+    if ~isfield(options,'lie_multiplier') || isempty(options.lie_multiplier)
+        options.lie_multiplier = lie_multiplier;
+    end
+    
+    
+    if ~isfield(options,'max_iter') || isempty(options.max_iter)
+        options.max_iter = max_iter;
+    end
+    
+    
+    if ~isfield(options,'epsilon') || isempty(options.epsilon)
+        options.epsilon = epsilon;
+    end
+    
+    
+    if ~isfield(options,'min_gain') || isempty(options.min_gain)
+        options.min_gain = min_gain;
+    end
+    
+    
+    if ~isfield(options,'tsne_readout') || isempty(options.tsne_readout)
+        options.tsne_readout = tsne_readout;
+    end
+    
+    
+    if ~isfield(options,'embedding_batchSize') || isempty(options.embedding_batchSize)
+        options.embedding_batchSize = embedding_batchSize;
+    end
+    
+    
+    if ~isfield(options,'maxOptimIter') || isempty(options.maxOptimIter)
+        options.maxOptimIter = maxOptimIter;
+    end
+    
+    
+    if ~isfield(options,'trainingSetSize') || isempty(options.trainingSetSize)
+        options.trainingSetSize = trainingSetSize;
+    end
+    
+    
+    if ~isfield(options,'kdNeighbors') || isempty(options.kdNeighbors)
+        options.kdNeighbors = kdNeighbors;
+    end
+    
+    
+    if ~isfield(options,'training_relTol') || isempty(options.training_relTol)
+        options.training_relTol = training_relTol;
+    end
+    
+    
+    if ~isfield(options,'training_perplexity') || isempty(options.training_perplexity)
+        options.training_perplexity = training_perplexity;
+    end
+    
+    
+    if ~isfield(options,'training_numPoints') || isempty(options.training_numPoints)
+        options.training_numPoints = training_numPoints;
+    end
+    
+    
+    if ~isfield(options,'minTemplateLength') || isempty(options.minTemplateLength)
+        options.minTemplateLength = minTemplateLength;
+    end
+    
+    if ~isfield(options,'run_tsne') || isempty(options.run_tsne)
+        options.run_tsne = run_tsne;
+    end
+    
     
     
     

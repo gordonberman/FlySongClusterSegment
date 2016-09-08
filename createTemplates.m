@@ -1,4 +1,4 @@
-function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores,options] = ...
+function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allScores,options] = ...
                                 createTemplates(data,options,plotsOn)
     
     %Inputs:
@@ -124,24 +124,23 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
     
     
     if N > maxNumPeaks
-        q = randperm(N);
-        q = q(1:options.maxNumPeaks);
+        q = randperm(N,options.maxNumPeaks);
         normalizedPeaks = normalizedPeaks(q,:);
         peakIdx = peakIdx(q);
         scores = scores(q,:);
     end
         
-    
-    
+
     allNormalizedPeaks = normalizedPeaks;
     allPeakIdx = peakIdx;
-    scores = scores(:,1:options.template_pca_dimension);
-    
+    allScores = scores(:,1:options.template_pca_dimension);
+    scores = allScores;
     
     fprintf(1,'   Clustering Peaks\n');
     kmeans_options = statset('MaxIter',options.kmeans_maxIter);
            
     idx = kmeans(scores,options.k,'replicates',options.kmeans_replicates,'options',kmeans_options);
+    clusterIdx = idx;
         
     templates = cell(options.k,1);
     amplitudes = cell(options.k,1);
@@ -255,5 +254,20 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,scores
 
     isNoise = outputData.isNoise;
     
+    
+    if options.run_tsne
+        fprintf(1,'   Computing t-SNE Embedding\n');
+        options.signalLabels = [];
+        options.tsne_readout = 25;
+        [yData,~,~,~] = run_tSne(allScores,options);
+        outputData.yData = yData;
+        outputData.idx = idx;
+        figure
+        scatter(yData(:,1),yData(:,2),[],clusterIdx,'filled')
+        colormap(jet)
+        axis equal tight off 
+        colorbar
+        set(gca,'fontsize',16,'fontweight','bold')
+    end
     
     
