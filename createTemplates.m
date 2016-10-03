@@ -54,9 +54,18 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     amplitude_threshold = options.amplitude_threshold; 
     numIPIBins = 10000;
     min_noise_threshold = options.min_noise_threshold;
+    median_filter_length = round(options.median_filter_length * Fs / 1000);
     if min_noise_threshold > 0
         min_noise_threshold = log10(min_noise_threshold.^2);
     end
+    
+    if median_filter_length > 0
+        if mod(median_filter_length,2) == 0
+            median_filter_length = median_filter_length + 1;
+        end
+        data = medfilt1(data,median_filter_length);
+    end
+    
     
     %find regions masked by pulse amplitude
     [~,~,noiseThreshold,smoothedPeakLocations] = ...

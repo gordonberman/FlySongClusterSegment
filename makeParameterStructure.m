@@ -63,6 +63,9 @@ function options = makeParameterStructure(options)
     %minimum noise threshold (set to be negative to ignore, default = -1)
     min_noise_threshold = -1;
     
+    %length of data median filter in milliseconds (default = 1, not used if < 0)
+    median_filter_length = 1;
+    
     
     
     %%%%%%%% t-SNE options %%%%%%%%
@@ -135,6 +138,9 @@ function options = makeParameterStructure(options)
     minTemplateLength = 1;
     
     
+    if ~isfield(options,'median_filter_length') || isempty(options.median_filter_length)
+        options.median_filter_length = median_filter_length;
+    end
     
     if ~isfield(options,'template_pca_dimension') || isempty(options.template_pca_dimension)
         options.template_pca_dimension = template_pca_dimension;

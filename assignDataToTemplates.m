@@ -43,7 +43,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     options = makeParameterStructure(options);
     
     Fs = options.fs;
-   
+
     
     %find all potential peaks in the new data set
     fprintf(1,'   Finding Peak Locations\n');
@@ -56,8 +56,17 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     smoothingLength_noise = options.smoothingLength_noise * Fs / 1000;
     minRegionLength = round(options.minRegionLength * Fs / 1000);
     min_noise_threshold = options.min_noise_threshold;
+    median_filter_length = round(options.median_filter_length * Fs / 1000);
     if min_noise_threshold > 0
         min_noise_threshold = log10(min_noise_threshold.^2);
+    end
+    
+    
+    if median_filter_length > 0
+        if mod(median_filter_length,2) == 0
+            median_filter_length = median_filter_length + 1;
+        end
+        data = medfilt1(data,median_filter_length);
     end
     
     
