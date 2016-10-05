@@ -105,14 +105,13 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         smoothingLength_noise,minRegionLength,[],[],[],diffThreshold,noiseThreshold);
     
     %find normalized peaks
-    %N = length(peakIdx);
-    r = (diffThreshold-1)/2;
-    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); %added to eliminate edge cases
     N = length(peakIdx);
+    r = (diffThreshold-1)/2;
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);
     signs = sign(newData(peakIdx));
     
+    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r);
     for i=1:N
         a = newData(peakIdx(i) + (-r:r));
         peakAmplitudes(i) = sqrt(mean(a.^2));
@@ -199,11 +198,6 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     percentBelowNoiseThreshold = percentBelowNoiseThreshold(idx);
     outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold;
         
-
-    %First, error out if no templates are generated
-    if isempty(templates)
-        error('     No templates generated!');
-    end
     
     templateSizes = zeros(length(templates),1);
     for i=1:length(templates)
