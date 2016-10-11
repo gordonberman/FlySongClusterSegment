@@ -60,11 +60,21 @@ function options = makeParameterStructure(options)
     %"noise" template (default = .9)
     amplitude_threshold = .9;
     
-    %minimum noise threshold (set to be negative to ignore, default = -1)
+    %minimum noise threshold (set to be empty to ignore, default = [])
     min_noise_threshold = -1;
     
     %length of data median filter in milliseconds (default = 1, not used if < 0)
     median_filter_length = 1;
+    
+    %minimum seperation between peaks in milliseconds (default = 1)
+    min_seperation = 10;
+    
+    %noise posterior threshold (between 0 and 1, 1 most stringent, default = .5)
+    noise_posterior_threshold = .5;
+    
+    %multiple of diff threshold, any small peaks within
+    %diff_threshold_multiplier*diff_threshold are ignored
+    diff_threshold_multiplier = .75;
     
     
     
@@ -137,6 +147,19 @@ function options = makeParameterStructure(options)
     %minimum training set template length
     minTemplateLength = 1;
     
+    
+    
+    if ~isfield(options,'diff_threshold_multiplier') || isempty(options.diff_threshold_multiplier)
+        options.diff_threshold_multiplier = diff_threshold_multiplier;
+    end
+    
+    if ~isfield(options,'noise_posterior_threshold') || isempty(options.noise_posterior_threshold)
+        options.noise_posterior_threshold = noise_posterior_threshold;
+    end
+    
+    if ~isfield(options,'min_seperation') || isempty(options.min_seperation)
+        options.min_seperation = min_seperation;
+    end
     
     if ~isfield(options,'median_filter_length') || isempty(options.median_filter_length)
         options.median_filter_length = median_filter_length;

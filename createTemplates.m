@@ -48,15 +48,19 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     replicates_GMM = options.replicates_GMM; 
     smoothingLength_noise = options.smoothingLength_noise * Fs / 1000;
     minRegionLength = round(options.minRegionLength * Fs / 1000);
-    maxIPI = options.maxIPI * Fs / 1000;
+    maxIPI = options.maxIPI / 1000;
     IPI_sigma = options.IPI_sigma * Fs / 1000; 
     num_IPI_halfWidths = options.num_IPI_halfWidths;
     amplitude_threshold = options.amplitude_threshold; 
     numIPIBins = 10000;
     min_noise_threshold = options.min_noise_threshold;
     median_filter_length = round(options.median_filter_length * Fs / 1000);
+    min_seperation = floor(options.min_seperation * Fs / 1000);
+    noise_posterior_threshold = options.noise_posterior_threshold;
     if min_noise_threshold > 0
         min_noise_threshold = log10(min_noise_threshold.^2);
+    else
+        min_noise_threshold = [];
     end
     
     if median_filter_length > 0
@@ -71,7 +75,8 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     [~,~,noiseThreshold,smoothedPeakLocations] = ...
         filterDataAmplitudes(data,smoothingLength_noise,minRegionLength,...
                         maxNumGaussians_noise,replicates_GMM,...
-                        maxNumPeaks_GMM,min_noise_threshold);
+                        maxNumPeaks_GMM,min_seperation,[],...
+                        min_noise_threshold,noise_posterior_threshold);
      
     %find IPIs                
     IPIs = diff(smoothedPeakLocations)/options.fs;
@@ -94,6 +99,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     min_location = fminsearch(@(x) s(x),halfMax_location);
     threshold_location = max(halfMax_location,min_location);
     diffThreshold = floor(threshold_location*Fs);
+    diffThreshold = max([diffThreshold 3*smoothingLength_noise]);
     
     %make sure that diffThreshold is an odd number of points
     if mod(diffThreshold,2) == 0
@@ -102,7 +108,8 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     %refilter data set using the found noise threshold and diffThreshold
     [newData,~,~,peakIdx] = filterDataAmplitudes(data,...
-        smoothingLength_noise,minRegionLength,[],[],[],diffThreshold,noiseThreshold);
+        smoothingLength_noise,minRegionLength,[],[],[],...
+        diffThreshold,noiseThreshold,[],noise_posterior_threshold);
     
     %find normalized peaks
     %N = length(peakIdx);

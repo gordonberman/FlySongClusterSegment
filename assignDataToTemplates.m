@@ -57,8 +57,12 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     minRegionLength = round(options.minRegionLength * Fs / 1000);
     min_noise_threshold = options.min_noise_threshold;
     median_filter_length = round(options.median_filter_length * Fs / 1000);
+    noise_posterior_threshold = options.noise_posterior_threshold;
+    diff_threshold_multiplier = options.diff_threshold_multiplier;
     if min_noise_threshold > 0
         min_noise_threshold = log10(min_noise_threshold.^2);
+    else
+        min_noise_threshold = [];
     end
     
     
@@ -72,7 +76,8 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     
     [newData,~,noiseThreshold,peakIdx] = filterDataAmplitudes(data,...
         smoothingLength_noise,minRegionLength,maxNumGaussians_noise,...
-        replicates_GMM,maxNumPeaks_GMM,diffThreshold,min_noise_threshold);
+        replicates_GMM,maxNumPeaks_GMM,diffThreshold*diff_threshold_multiplier,[],...
+        min_noise_threshold,noise_posterior_threshold);
     
     
     N = length(peakIdx);
