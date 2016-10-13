@@ -62,6 +62,14 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     else
         min_noise_threshold = [];
     end
+    high_pass_filter_cutoff = options.high_pass_filter_cutoff / (Fs/2);
+    butterworth_order = options.butterworth_order;
+    if high_pass_filter_cutoff > 0
+        [b,a] = butter(butterworth_order,high_pass_filter_cutoff,'high');
+        data = filter(b,a,data);
+    end
+    
+    
     
     if median_filter_length > 0
         if mod(median_filter_length,2) == 0
@@ -69,6 +77,8 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         end
         data = medfilt1(data,median_filter_length);
     end
+    
+    
     
     
     %find regions masked by pulse amplitude

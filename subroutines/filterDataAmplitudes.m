@@ -109,6 +109,13 @@ function [out,mask,threshold,smoothedPeakLocations] = filterDataAmplitudes(...
         end
     end
     
+    
+%     for i=1:length(smoothedPeakLocations)
+%         dIdx = argmax(abs(data(smoothedPeakLocations(i) + (-sigma:sigma)))) - sigma;
+%         smoothedPeakLocations(i) = smoothedPeakLocations(i) + dIdx;
+%     end
+    
+    
 %     if minSeperation ~= -1
 %         
 %         d = diff(smoothedPeakLocations);

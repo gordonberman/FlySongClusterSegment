@@ -29,6 +29,11 @@ function makeTemplateHistograms(templates,bins,means,ylimits)
     
     L = ceil(sqrt(N));
     M = ceil(N/L);
+    qq = -r:r;
+    if length(qq) > length(templates{1}(1,:))
+        qq = qq(1:end-1);
+    end
+    
     for i=1:N
         
         subplot(M,L,i)
@@ -40,14 +45,13 @@ function makeTemplateHistograms(templates,bins,means,ylimits)
         end
         Z = bsxfun(@rdivide,Z,sum(Z,2))/(xx(2)-xx(1));
         
-
-        pcolor(-r:r,xx,Z');
+        pcolor(qq,xx,Z');
         shading flat
         hold on
         caxis([0 .02*diff(ylimits)])
         
         
-        plot(-r:r,means{i},'k-','linewidth',2)
+        plot(qq,means{i},'k-','linewidth',2)
         title(['Template #' num2str(i) ', N = ' num2str(length(templates{i}(:,1)))]);
         
     end

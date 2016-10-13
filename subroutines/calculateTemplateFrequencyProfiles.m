@@ -16,6 +16,7 @@ function [freqs,fs,meanFreqs,stdFreqs,D] = calculateTemplateFrequencyProfiles(te
         end
     end
     
+    
     meanFreqs = zeros(L,N);
     stdFreqs = zeros(L,N);
     for i=1:L
@@ -23,11 +24,14 @@ function [freqs,fs,meanFreqs,stdFreqs,D] = calculateTemplateFrequencyProfiles(te
         stdFreqs(i,:) = std(freqs{i});
     end
     
-    D = zeros(L);
-    for i=1:L
-        for j=(i+1):L
-            d = (meanFreqs(i,:) - meanFreqs(j,:)).^2./(stdFreqs(i,:).^2 + stdFreqs(j,:).^2);
-            D(i,j) = sqrt(sum(d));
-            D(j,i) = D(i,j);
+    
+    if nargout > 4
+        D = zeros(L);
+        for i=1:L
+            for j=(i+1):L
+                d = (meanFreqs(i,:) - meanFreqs(j,:)).^2./(stdFreqs(i,:).^2 + stdFreqs(j,:).^2);
+                D(i,j) = sqrt(sum(d));
+                D(j,i) = D(i,j);
+            end
         end
     end

@@ -56,11 +56,11 @@ function options = makeParameterStructure(options)
     %(default = 2)
     num_IPI_halfWidths = 4;
     
-    %percentage of peak amplitudes below the nosie threshold to be called a
-    %"noise" template (default = .9)
-    amplitude_threshold = .9;
+    %percentage of peak amplitudes below the noise threshold to be called a
+    %"noise" template (default = .75)
+    amplitude_threshold = .75;
     
-    %minimum noise threshold (set to be empty to ignore, default = [])
+    %minimum noise threshold (set to be negative to ignore, default = -1)
     min_noise_threshold = -1;
     
     %length of data median filter in milliseconds (default = 1, not used if < 0)
@@ -73,9 +73,14 @@ function options = makeParameterStructure(options)
     noise_posterior_threshold = .5;
     
     %multiple of diff threshold, any small peaks within
-    %diff_threshold_multiplier*diff_threshold are ignored
+    %diff_threshold_multiplier*diff_threshold are ignored (default = .75)
     diff_threshold_multiplier = .75;
     
+    %high pass filter cut-off on data set in Hz (default = -1, < 0 to not filter)
+    high_pass_filter_cutoff = -1;
+    
+    %butterworth high-pass filter cut-off order (default = 6)
+    butterworth_order = 6;
     
     
     %%%%%%%% t-SNE options %%%%%%%%
@@ -148,6 +153,14 @@ function options = makeParameterStructure(options)
     minTemplateLength = 1;
     
     
+    
+    if ~isfield(options,'high_pass_filter_cutoff') || isempty(options.high_pass_filter_cutoff)
+        options.high_pass_filter_cutoff = high_pass_filter_cutoff;
+    end
+    
+    if ~isfield(options,'butterworth_order') || isempty(options.butterworth_order)
+        options.butterworth_order = butterworth_order;
+    end
     
     if ~isfield(options,'diff_threshold_multiplier') || isempty(options.diff_threshold_multiplier)
         options.diff_threshold_multiplier = diff_threshold_multiplier;

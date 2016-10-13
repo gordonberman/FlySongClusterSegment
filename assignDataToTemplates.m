@@ -65,6 +65,13 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
         min_noise_threshold = [];
     end
     
+    high_pass_filter_cutoff = options.high_pass_filter_cutoff / (Fs/2);
+    butterworth_order = options.butterworth_order;
+    if high_pass_filter_cutoff > 0
+        [b,a] = butter(butterworth_order,high_pass_filter_cutoff,'high');
+        data = filter(b,a,data);
+    end
+    
     
     if median_filter_length > 0
         if mod(median_filter_length,2) == 0
@@ -80,8 +87,9 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
         min_noise_threshold,noise_posterior_threshold);
     
     
-    N = length(peakIdx);
     r = (diffThreshold-1)/2;
+    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); %added to eliminate edge cases
+    N = length(peakIdx);
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);
     for i=1:N
