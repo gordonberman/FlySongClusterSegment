@@ -1,4 +1,4 @@
-function [freqs,fs,meanFreqs,stdFreqs,D] = calculateTemplateFrequencyProfiles(templates,Fs)
+function [freqs,fs,meanFreqs,stdFreqs,f_carriers,D] = calculateTemplateFrequencyProfiles(templates,Fs)
 
     L = length(templates);
     d = length(templates{1}(1,:));
@@ -19,13 +19,19 @@ function [freqs,fs,meanFreqs,stdFreqs,D] = calculateTemplateFrequencyProfiles(te
     
     meanFreqs = zeros(L,N);
     stdFreqs = zeros(L,N);
+    f_carriers = zeros(L,1);
     for i=1:L
         meanFreqs(i,:) = mean(freqs{i});
         stdFreqs(i,:) = std(freqs{i});
+        q = fit(fs',meanFreqs(i,:)','spline');
+        idx = argmax(meanFreqs(i,:));
+        f_carriers(i) = fminsearch(@(x) -q(x),fs(idx));
     end
     
     
-    if nargout > 4
+    
+    
+    if nargout > 5
         D = zeros(L);
         for i=1:L
             for j=(i+1):L
