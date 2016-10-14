@@ -66,7 +66,7 @@ function [noiseData,fs,psd,maxP] = createNoiseDataSet(data,noiseDataLength,optio
         
         
     fs = linspace(0,Fs/2,ceil(length(data)/2));
-    f = fft(data);
+    f = fft(noiseData);
     p = f.*conj(f);
     p = p(2:length(fs));
     psd = p ./ (sum(p)*(fs(2)-fs(1)));
