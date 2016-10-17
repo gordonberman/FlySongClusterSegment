@@ -1,4 +1,4 @@
-function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,options)
+function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,minFromEachDataSet,options)
 
 
     addpath(genpath('./utilities/'));
@@ -14,7 +14,11 @@ function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,opt
     thresholds = zeros(N,1);
     numSegments = zeros(N,1);
     
-    if nargin < 3 || isempty(options)
+    if nargin < 3 || isempty(minFromEachDataSet)
+        minFromEachDataSet = trainingSetLength / (N*10);
+    end
+    
+    if nargin < 4 || isempty(options)
         options.setAll = true;
     else
         options.setAll = false;
@@ -67,8 +71,7 @@ function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,opt
         numSegments(i) = CCs{i}.NumObjects;
         
     end
-    
-    
+        
     d = zeros(sum(numSegments),3);
     count = 0;
     for i=1:N
@@ -78,18 +81,45 @@ function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,opt
         count = count + numSegments(i);
     end
         
+    dataSetMins = zeros(N,1);
+    for i=1:N
+        dataSetMins(i) = min([sum(d(d(:,1)==i,3)),minFromEachDataSet]);
+    end
+    
+    
     idx = randperm(sum(numSegments));
     d = d(idx,:);
+    
     cumSums = cumsum(d(:,3));
     idx = find(cumSums >= trainingSetLength,1,'first');
     if isempty(idx)
         idx = sum(numSegments);
+%     else
+%         numFromDataSets = zeros(N,1);
+%         for i=1:N
+%             numFromDataSets(i) = sum(d(d(1:idx,1)==i,3));
+%         end
+%         idx2 = find(numFromDataSets < dataSetMins);
+%         if ~isempty(idx2)
+%             
+%             for i=1:length(idx2)
+%                 
+%                 
+%                 
+%             end
+%             
+%         end
+        
     end
     
+    
+    
     trainingSet = zeros(sum(d(1:idx,3)),1);
+    trainingSet_origins = zeros(idx,3);
     count = 0;
     for i=1:idx
         trainingSet((1:d(i,3)) + count) = data{d(i,1)}(CCs{d(i,1)}.PixelIdxList{d(i,2)});
+        trainingSet_origins(i,:) = [count+1,count+d(i,3),d(i,1)];  
         count = count + d(i,3);
     end
     
