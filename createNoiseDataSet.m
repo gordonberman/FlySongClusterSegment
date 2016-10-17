@@ -1,4 +1,4 @@
-function [noiseData,fs,psd,maxP] = createNoiseDataSet(data,noiseDataLength,options)
+function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = createNoiseDataSet(data,noiseDataLength,options)
 
 
     addpath(genpath('./utilities/'));
@@ -75,8 +75,8 @@ function [noiseData,fs,psd,maxP] = createNoiseDataSet(data,noiseDataLength,optio
     maxP = max(psd);
 
   
-    
-    
+    sigmaNoise = std(noiseData);
+    percentNoise = mean(mask);
         
     
         
