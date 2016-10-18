@@ -1,4 +1,19 @@
 function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = createNoiseDataSet(data,noiseDataLength,options)
+%Creates a noise "data set" from the array 'data'
+%
+%Inputs:
+%   data -> array of data or a string pointing to a .wav file 
+%   noiseDataLength -> length of returned noise data
+%   options -> options structure (see makeParameterStructure.m for details)
+%
+%Outputs:
+%   noiseData -> array of noise data
+%   fs -> frequencies in noise data power spectrum
+%   psd -> power spectral density from noise data
+%   maxP -> maximum psd value (note: not the frequency)
+%   sigmaNoise -> standard deviation of noise
+%   threshold -> threshold for determining signal from noise
+%   percentNoise -> fraction of 'data' classified as nosie
 
 
     addpath(genpath('./utilities/'));
@@ -12,6 +27,11 @@ function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = createNoise
     end
     options = makeParameterStructure(options);
     
+    
+    if ischar(data)
+        [data,Fs] = audioread('data');
+        options.Fs = Fs;
+    end
     
     Fs = options.fs;
     sigma = 10*options.smoothingLength_noise * Fs / 1000;

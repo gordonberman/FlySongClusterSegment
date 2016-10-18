@@ -1,4 +1,4 @@
-function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,minFromEachDataSet,options)
+function [trainingSet,trainingSet_origins,thresholds] = createTrainingSet(data,trainingSetLength,minFromEachDataSet,options)
 
 
     addpath(genpath('./utilities/'));
@@ -71,8 +71,9 @@ function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,min
         numSegments(i) = CCs{i}.NumObjects;
         
     end
+    totalNumSegments = sum(numSegments);
         
-    d = zeros(sum(numSegments),3);
+    d = zeros(totalNumSegments,3);
     count = 0;
     for i=1:N
         d((1:numSegments(i)) + count,1) = i;
@@ -82,36 +83,33 @@ function [trainingSet,thresholds] = createTrainingSet(data,trainingSetLength,min
     end
         
     dataSetMins = zeros(N,1);
+    idx = zeros(totalNumSegments,1);
+    count = 0;
     for i=1:N
         dataSetMins(i) = min([sum(d(d(:,1)==i,3)),minFromEachDataSet]);
+        if dataSetMins(i) > 0
+            idx2 = find(d(:,1) == i);
+            q = randperm(length(idx2));
+            lengths = d(idx2(q),3);
+            cSum = cumsum(lengths);
+            idx3 = find(cSum >= dataSetMins(i),1,'first');
+            idx(count + (1:idx3)) = idx2(q(1:idx3));
+            count = count + idx3;
+        end
     end
     
     
-    idx = randperm(sum(numSegments));
+    remainingIdx = setdiff(1:totalNumSegments,idx(1:count))';
+    idx = [idx(1:count);remainingIdx(randperm(length(remainingIdx)))];
     d = d(idx,:);
     
     cumSums = cumsum(d(:,3));
     idx = find(cumSums >= trainingSetLength,1,'first');
     if isempty(idx)
-        idx = sum(numSegments);
-%     else
-%         numFromDataSets = zeros(N,1);
-%         for i=1:N
-%             numFromDataSets(i) = sum(d(d(1:idx,1)==i,3));
-%         end
-%         idx2 = find(numFromDataSets < dataSetMins);
-%         if ~isempty(idx2)
-%             
-%             for i=1:length(idx2)
-%                 
-%                 
-%                 
-%             end
-%             
-%         end
-        
+        idx = totalNumSegments;
     end
-    
+    d = d(1:idx,:);
+    d = d(randperm(length(d(:,1))),:);
     
     
     trainingSet = zeros(sum(d(1:idx,3)),1);
