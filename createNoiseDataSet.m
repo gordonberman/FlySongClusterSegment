@@ -1,4 +1,5 @@
-function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = createNoiseDataSet(data,noiseDataLength,options)
+function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = ...
+    createNoiseDataSet(data,noiseDataLength,options)
 %Creates a noise "data set" from the array 'data'
 %
 %Inputs:
@@ -29,7 +30,7 @@ function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = createNoise
     
     
     if ischar(data)
-        [data,Fs] = audioread('data');
+        [data,Fs] = audioread(data);
         options.Fs = Fs;
     end
     

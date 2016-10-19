@@ -118,8 +118,10 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     clear projections 
     
     
-    %assign peaks to teh template with maximum likelihood
+    %assign peaks to the template with maximum likelihood
     [~,idx] = max(likes,[],2);
+    
+    
     
     groupings = cell(L,1);
     peakIdxGroup = cell(L,1);
@@ -127,6 +129,23 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
         q = idx == i;
         groupings{i} = allNormalizedPeaks(q,:);
         peakIdxGroup{i} = allPeakIdx(q);
+    end
+    
+    if isfield(outputData,'templateGroupings') && ~isempty(outputData.templateGroupings)
+        
+        k = unique(outputData.templateGroupings);
+        M = length(k);
+        groupings2 = cell(M,1);
+        peakIdxGroup2 = cell(M,1);
+
+        for i=1:M
+            groupings2{i} = cell2mat(groupings(outputData.templateGroupings==k(i)));
+            peakIdxGroup2{i} = cell2mat(peakIdxGroup(outputData.templateGroupings==k(i)));
+        end
+        
+        groupings = groupings2;
+        peakIdxGroup = peakIdxGroup2;
+        
     end
     
     

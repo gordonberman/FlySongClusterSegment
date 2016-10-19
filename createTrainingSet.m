@@ -1,4 +1,5 @@
-function [trainingSet,trainingSet_origins,thresholds] = createTrainingSet(data,trainingSetLength,minFromEachDataSet,options)
+function [trainingSet,trainingSet_origins,thresholds] = ...
+    createTrainingSet(data,trainingSetLength,minFromEachDataSet,options)
 
 
     addpath(genpath('./utilities/'));
@@ -46,6 +47,10 @@ function [trainingSet,trainingSet_origins,thresholds] = createTrainingSet(data,t
     
     CCs = cell(N,1);
     for i=1:N
+        
+        if ischar(data{i})
+            [data{i},~] = audioread(data{i});
+        end
         
         if high_pass_filter_cutoff > 0
             data{i} = filter(b,a,data{i});
