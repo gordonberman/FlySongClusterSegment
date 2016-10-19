@@ -14,7 +14,7 @@ function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = ...
 %   maxP -> maximum psd value (note: not the frequency)
 %   sigmaNoise -> standard deviation of noise
 %   threshold -> threshold for determining signal from noise
-%   percentNoise -> fraction of 'data' classified as nosie
+%   percentNoise -> fraction of 'data' classified as noise
 
 
     addpath(genpath('./utilities/'));

@@ -1,5 +1,20 @@
 function [trainingSet,trainingSet_origins,thresholds] = ...
     createTrainingSet(data,trainingSetLength,minFromEachDataSet,options)
+%Creates a training set from the cell array 'data'
+%
+%Inputs:
+%   data -> N x 1 cell array of data or strings pointing to .wav files (can be a mixture) 
+%   trainingSetLength -> minimum length of returned training set
+%   minFromEachDataSet -> minumum number of data points from each element in 'data'
+%   options -> options structure (see makeParameterStructure.m for details)
+%
+%Outputs:
+%   trainingSet -> training set data
+%   trainingSet_origins -> L x 3 array.  
+%                               First column -> beginning of region
+%                               Second column -> end of region
+%                               Third column -> data set # of region
+%   thresholds -> thresholds for determining signal from noise for each data set
 
 
     addpath(genpath('./utilities/'));
