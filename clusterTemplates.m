@@ -34,7 +34,7 @@ function outputData = clusterTemplates(outputData,numClusters,options,plotsOn)
     k = unique(a);
     outputData.isNoiseTemplateGrouping = false(length(k),1);
     for i=1:length(k)
-        outputData.isNoiseTemplateGrouping(i) = max(isNoise(a==k(i)));
+        outputData.isNoiseTemplateGrouping(i) = min(isNoise(a==k(i)));
     end
 
     
