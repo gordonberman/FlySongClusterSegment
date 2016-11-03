@@ -9,7 +9,9 @@ function outputData = clusterTemplates(outputData,numClusters,options,plotsOn)
         plotsOn = true;
     end
         
-
+    isNoise = outputData.isNoise;
+    
+    
     [~,~,~,~,~,D] = ...
         calculateTemplateFrequencyProfiles(outputData.templates,options.fs);
 
@@ -28,6 +30,12 @@ function outputData = clusterTemplates(outputData,numClusters,options,plotsOn)
         a = b;
     end
     outputData.templateGroupings = a;
+    
+    k = unique(a);
+    outputData.isNoiseTemplateGrouping = false(length(k),1);
+    for i=1:length(k)
+        outputData.isNoiseTemplateGrouping(i) = min(isNoise(a==k(i)));
+    end
 
     
     if plotsOn
