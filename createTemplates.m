@@ -49,7 +49,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     smoothingLength_noise = options.smoothingLength_noise * Fs / 1000;
     minRegionLength = round(options.minRegionLength * Fs / 1000);
     maxIPI = options.maxIPI / 1000;
-    IPI_sigma = options.IPI_sigma * Fs / 1000; 
+    IPI_sigma = options.IPI_sigma / 1000; %* Fs / 1000; 
     num_IPI_halfWidths = options.num_IPI_halfWidths;
     amplitude_threshold = options.amplitude_threshold; 
     numIPIBins = 10000;
@@ -95,8 +95,10 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     %find IPI distribution through kernel density estimation
     [Y,X] = hist(IPIs,numIPIBins);
     Y = normalizeHist(X,Y);
-    Y = gaussianfilterdata(Y,IPI_sigma);   
+    IPI_sigma = IPI_sigma / (X(2) - X(1));
+    Y = gaussianfilterdata(Y,IPI_sigma);
     s = fit(X',Y','spline');
+    
     
     %estimate mode of the IPI distribution
     modeIPI_estimate = fminsearch(@(x) -s(x),X(argmax(Y)));
@@ -238,6 +240,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     %make template plots
     if plotsOn
+        figure
         makeTemplateHistograms(templates,histogramBins,[],[-.5 .5]*sqrt(outputData.diffThreshold));
     end
     

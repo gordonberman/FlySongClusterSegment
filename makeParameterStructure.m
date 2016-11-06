@@ -49,8 +49,8 @@ function options = makeParameterStructure(options)
     maxIPI = 500;
     
     %smoothing sigma for IPI kernel density estimation in milliseconds
-    %(default = .05)
-    IPI_sigma = .05;
+    %(default = 1 ms)
+    IPI_sigma = 1;
     
     %number of FWHM widths of IPI distribution to set for diffThreshold
     %(default = 2)
