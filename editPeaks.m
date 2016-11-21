@@ -3,7 +3,7 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot)
     plotRange = 50000;
     edgeValue = 10000;
     maxNewPeaks = 1000000;
-    clickThreshold = 25;
+    clickThreshold = 50;
     
     if nargin < 3 || isempty(toPlot)
         toPlot = 1:length(peakIdxGroup);
