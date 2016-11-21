@@ -1,4 +1,4 @@
-function makePeakPlot(data,peakIdxGroup,toPlot)
+function makePeakPlot(data,peakIdxGroup,toPlot,xRange)
     %makes peak plot (data, with lines, colored differently for different
     %templates)
     
@@ -23,7 +23,11 @@ function makePeakPlot(data,peakIdxGroup,toPlot)
     
     L = length(toPlot);
     
-    plot(data,'b-');
+    if nargin < 4 || isempty(xRange) || length(xRange) ~= length(data)
+        plot(data,'b-');
+    else
+        plot(xRange,data);
+    end
     hold on
     
     for i=1:L
