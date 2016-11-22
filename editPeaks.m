@@ -1,6 +1,9 @@
-function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot)
+function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
 
-    plotRange = 50000;
+    if nargin < 4 || isempty(plotRange)
+        plotRange = 30000;
+    end
+
     edgeValue = 10000;
     maxNewPeaks = 1000000;
     clickThreshold = 50;
@@ -25,6 +28,9 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot)
     newPeaks = zeros(maxNewPeaks,1);
     currentPeak = max([peaks(1) 5001]);
     xlimits = round(currentPeak + [-edgeValue, plotRange-edgeValue]);
+    if xlimits(1) <= 0
+        xlimits = xlimits - xlimits(1) + 1;
+    end
     
     
     h = figure(9942325.);
@@ -64,7 +70,7 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot)
                 if minD <= clickThreshold
                     
                     %if close to a peak in the original data set
-                    keep(minDIdx) = false;
+                    keep(minDIdx) = ~keep(minDIdx);
                     
                 else
                     
@@ -110,8 +116,12 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot)
                     idx = find(peaks >= xlimits(2),1,'first');
                     currentPeak = peaks(idx);
                     xlimitsNext = round(currentPeak + [-edgeValue, plotRange-edgeValue]);
-                    if xlimitsNext(2) > length(data)
-                        xlimitsNext = xlimitsNext + length(data) - xlimitsNext(2);
+                    if isempty(xlimitsNext)
+                        xlimitsNext = [length(data)+1, length(data)+2];
+                    else
+                        if xlimitsNext(2) > length(data)
+                            xlimitsNext = xlimitsNext + length(data) - xlimitsNext(2);
+                        end                    
                     end
                     
                 else
@@ -163,7 +173,7 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot)
     
     if count > 1
         peakIdxGroup = [peakIdxGroup; newPeaks(1:count-1)];
-        toPlot = [toPlot;length(toPlot)+1];
+        toPlot = [toPlot;length(peakIdxGroup)];
     end
     
     for i=1:length(peakIdxGroup)
