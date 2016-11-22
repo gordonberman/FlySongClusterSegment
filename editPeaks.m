@@ -49,7 +49,9 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
         clf
         makePeakPlot(data(xlimits(1):xlimits(2)),{peaksInFrame(keep)},[],xlimits(1):xlimits(2));
         xlim([xlimits(1) xlimits(2)])
-        title('Click to add or remove peak, Return/Enter to move to next screen, E to end','fontweight','bold','fontsize',12)
+        numPeaks = sum(keep) + currentCount - 1;
+        title(['Click to add or remove peak, Return/Enter to move to next screen, E to end (N_{peaks} = ' ...
+            num2str(numPeaks) ')'],'fontweight','bold','fontsize',12)
         
         
         button = 1;
@@ -80,7 +82,7 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
                         if minD <= clickThreshold
                             
                             %if close to one of the new peaks
-                            if currentCount > 2
+                            if currentCount >= 2
                                 currentNewPeaks(1:currentCount-2) = currentNewPeaks(setdiff(1:currentCount-1,minDIdx));
                                 currentCount = currentCount - 1;
                             else
@@ -134,6 +136,7 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
             
             
             figure(9942325.)
+            numPeaks = sum(keep) + currentCount - 1;
             clf
             if currentCount > 1
                 makePeakPlot(data(xlimits(1):xlimits(2)),{[peaksInFrame(keep);currentNewPeaks(1:currentCount-1)]},1,xlimits(1):xlimits(2));
@@ -141,7 +144,11 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
                 makePeakPlot(data(xlimits(1):xlimits(2)),{peaksInFrame(keep)},1,xlimits(1):xlimits(2));
             end
             xlim([xlimits(1) xlimits(2)])
-            title('Click to add or remove peak, Return/Enter to move to next screen, E to end','fontweight','bold','fontsize',12)
+            if min(abs(ylim)) < .5
+                ylim([-.5 .5]);
+            end
+            title(['Click to add or remove peak, Return/Enter to move to next screen, E to end (N_{peaks} = ' ...
+                num2str(numPeaks) ')'],'fontweight','bold','fontsize',12)
             
             
         end
