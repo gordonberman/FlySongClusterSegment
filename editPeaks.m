@@ -1,7 +1,11 @@
-function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
+function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange,yRange)
 
     if nargin < 4 || isempty(plotRange)
         plotRange = 30000;
+    end
+    
+    if nargin < 5 || isempty(yRange)
+        yRange = [];
     end
 
     edgeValue = 10000;
@@ -50,6 +54,9 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
         makePeakPlot(data(xlimits(1):xlimits(2)),{peaksInFrame(keep)},[],xlimits(1):xlimits(2));
         xlim([xlimits(1) xlimits(2)])
         numPeaks = sum(keep) + currentCount - 1;
+        if ~isempty(yRange)
+            ylim(yRange)
+        end
         title(['Click to add or remove peak, Return/Enter to move to next screen, E to end (N_{peaks} = ' ...
             num2str(numPeaks) ')'],'fontweight','bold','fontsize',12)
         
@@ -61,6 +68,20 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
             [x,~,button] = ginput(1);
             while ~isempty(button) && ~(button == 1 || button == 69 || button == 101)
                 [x,~,button] = ginput(1);
+                if button == 45
+                    q = ylim;
+                    z = q - mean(q);
+                    z = z.*1.25;
+                    ylim(z + 1.25*mean(q));
+                    [x,~,button] = ginput(1);
+                end
+                if button == 43
+                    q = ylim;
+                    z = q - mean(q);
+                    z = z./1.25;
+                    ylim(z + mean(q)/1.25);
+                    [x,~,button] = ginput(1);
+                end
             end
                         
             if button == 1
@@ -149,7 +170,9 @@ function [peakIdxGroup,toPlot] = editPeaks(data,peakIdxGroup,toPlot,plotRange)
             end
             title(['Click to add or remove peak, Return/Enter to move to next screen, E to end (N_{peaks} = ' ...
                 num2str(numPeaks) ')'],'fontweight','bold','fontsize',12)
-            
+            if ~isempty(yRange)
+                ylim(yRange)
+            end
             
         end
         
