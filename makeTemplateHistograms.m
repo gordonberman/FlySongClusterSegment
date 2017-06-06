@@ -1,4 +1,4 @@
-function makeTemplateHistograms(templates,bins,means,ylimits)
+function [Z,means,xx] = makeTemplateHistograms(templates,bins,means,ylimits)
     %makes template histogram plot
     
     %Inputs:
