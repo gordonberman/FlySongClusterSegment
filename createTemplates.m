@@ -240,71 +240,80 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     close all
     
+       
     %make template plots
-    if plotsOn
-        figure
-        makeTemplateHistograms(templates,histogramBins,[],[-.5 .5]*sqrt(outputData.diffThreshold));
-    end
-    
-    
-    %defining templates
-    L = length(templates);
-    d = length(templates{1}(1,:));
-    coeffs = cell(L,1);
-    projStds = cell(L,1);
-    means = cell(L,1);
-    L_templates = zeros(L,1);
-    fprintf(1,'   Finding Template Bases and Projections\n');
-    for i=1:L
+    if ~isempty(templates)
         
-        fprintf(1,'      Template #%2i\n',i);
-        L_templates(i) = length(templates{i}(:,1));
+        if plotsOn
+            figure
+            makeTemplateHistograms(templates,histogramBins,[],[-.5 .5]*sqrt(outputData.diffThreshold));
+        end
         
-        %find Data Set Mean
-        means{i} = mean(templates{i});
-    
-        %perform PCA on set of normalized peaks
-        [coeffs{i},scores,~] = pca(templates{i});
         
-        projStds{i} = std(scores);
-    end
-    
-    
-    %adjust bases sets for sub-sampled data sets
-    minLength = min(L_templates);
-    if minLength < 2*d
-        q = round(minLength / 2);
+        %defining templates
+        L = length(templates);
+        d = length(templates{1}(1,:));
+        coeffs = cell(L,1);
+        projStds = cell(L,1);
+        means = cell(L,1);
+        L_templates = zeros(L,1);
+        fprintf(1,'   Finding Template Bases and Projections\n');
+        for i=1:L
+            
+            fprintf(1,'      Template #%2i\n',i);
+            L_templates(i) = length(templates{i}(:,1));
+            
+            %find Data Set Mean
+            means{i} = mean(templates{i});
+            
+            %perform PCA on set of normalized peaks
+            [coeffs{i},scores,~] = pca(templates{i});
+            
+            projStds{i} = std(scores);
+        end
+        
+        
+        %adjust bases sets for sub-sampled data sets
+        minLength = min(L_templates);
+        if minLength < 2*d
+            q = round(minLength / 2);
+        else
+            q = d;
+        end
+        
+        for i=1:L
+            coeffs{i} = coeffs{i}(:,options.first_mode:q);
+            projStds{i} = projStds{i}(options.first_mode:q);
+        end
+        
+        
+        outputData.coeffs = coeffs;
+        outputData.projStds = projStds;
+        outputData.L_templates = L_templates;
+        outputData.means = means;
+        
+        isNoise = outputData.isNoise;
+        
+        
+        if options.run_tsne
+            fprintf(1,'   Computing t-SNE Embedding\n');
+            options.signalLabels = [];
+            options.tsne_readout = 25;
+            [yData,~,~,~] = run_tSne(allScores,options);
+            outputData.yData = yData;
+            outputData.idx = idx;
+            figure
+            scatter(yData(:,1),yData(:,2),[],clusterIdx,'filled')
+            colormap(jet)
+            axis equal tight off
+            colorbar
+            set(gca,'fontsize',16,'fontweight','bold')
+        end
+        
+        
     else
-        q = d;
+       
+        fprintf(1,'All Templates are Empty.  Attempt adjusting the smoothingLength_noise parameter.\n')
+              
+        
     end
-    
-    for i=1:L
-        coeffs{i} = coeffs{i}(:,options.first_mode:q);
-        projStds{i} = projStds{i}(options.first_mode:q);
-    end
-    
-    
-    outputData.coeffs = coeffs;
-    outputData.projStds = projStds;
-    outputData.L_templates = L_templates;
-    outputData.means = means;
-
-    isNoise = outputData.isNoise;
-    
-    
-    if options.run_tsne
-        fprintf(1,'   Computing t-SNE Embedding\n');
-        options.signalLabels = [];
-        options.tsne_readout = 25;
-        [yData,~,~,~] = run_tSne(allScores,options);
-        outputData.yData = yData;
-        outputData.idx = idx;
-        figure
-        scatter(yData(:,1),yData(:,2),[],clusterIdx,'filled')
-        colormap(jet)
-        axis equal tight off 
-        colorbar
-        set(gca,'fontsize',16,'fontweight','bold')
-    end
-    
-    
