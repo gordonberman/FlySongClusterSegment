@@ -54,7 +54,7 @@ function options = makeParameterStructure(options)
     
     %number of FWHM widths of IPI distribution to set for diffThreshold
     %(default = 2)
-    num_IPI_halfWidths = 4;
+    num_IPI_halfWidths = 2;
     
     %percentage of peak amplitudes below the noise threshold to be called a
     %"noise" template (default = .75)
@@ -67,7 +67,7 @@ function options = makeParameterStructure(options)
     median_filter_length = 1;
     
     %minimum seperation between peaks in milliseconds (default = 1)
-    min_seperation = 10;
+    min_seperation = 1;
     
     %noise posterior threshold (between 0 and 1, 1 most stringent, default = .5)
     noise_posterior_threshold = .5;
