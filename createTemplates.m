@@ -184,22 +184,24 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     
     %uncomment this to allow for human annotation of templates
-    %     splitted = true;
-    %     isNoise = false(size(templates));
-    %     while splitted
-    %
-    %         noiseTemplates = templates(isNoise);
-    %         noiseAmplitudes = amplitudes(isNoise);
-    %         isNoiseOld = isNoise(isNoise);
-    %
-    %         [templates2,isNoise,splitted,amplitudes2] = selectTemplates(templates(~isNoise),amplitudes,false);
-    %
-    %         templates = [templates2;noiseTemplates];
-    %         amplitudes = [amplitudes2;noiseAmplitudes];
-    %
-    %         isNoise = [isNoise;isNoiseOld];
-    %
-    %     end
+    if options.humanLabel
+        splitted = true;
+        isNoise = false(size(templates));
+        while splitted
+            
+            noiseTemplates = templates(isNoise);
+            noiseAmplitudes = amplitudes(isNoise);
+            isNoiseOld = isNoise(isNoise);
+            
+            [templates2,isNoise,splitted,amplitudes2] = selectTemplates(templates(~isNoise),amplitudes,false);
+            
+            templates = [templates2;noiseTemplates];
+            amplitudes = [amplitudes2;noiseAmplitudes];
+            
+            isNoise = [isNoise;isNoiseOld];
+            
+        end
+    end
     
     
     %automatically determine noise templates

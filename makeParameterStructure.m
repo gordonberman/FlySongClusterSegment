@@ -17,6 +17,9 @@ function options = makeParameterStructure(options)
     %number of clusters in kmeans (default = 12)
     k = 12;
     
+    %true if running human labeling of noise templates (default = false)
+    humanLabel = false;
+    
     %maximum # of peaks to use in clustering & GMM (default = 10000);
     maxNumPeaks = 10000;
         
@@ -204,6 +207,10 @@ function options = makeParameterStructure(options)
     
     if ~isfield(options,'fs') || isempty(options.fs)
         options.fs = fs;
+    end
+    
+    if ~isfield(options,'humanLabel') || isempty(options.humanLabel)
+        options.humanLabel = humanLabel;
     end
     
     if ~isfield(options,'min_template_size') || isempty(options.min_template_size)
