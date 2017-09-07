@@ -185,41 +185,48 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     %uncomment this to allow for human annotation of templates
     if options.humanLabel
+        
+        histRangeVal = .5*sqrt(outputData.diffThreshold);
         splitted = true;
         isNoise = false(size(templates));
         while splitted
             
             noiseTemplates = templates(isNoise);
             noiseAmplitudes = amplitudes(isNoise);
-            isNoiseOld = isNoise(isNoise);
+            %isNoiseOld = isNoise(isNoise);
             
-            [templates2,isNoise,splitted,amplitudes2] = selectTemplates(templates(~isNoise),amplitudes,false);
+            [templates2,isNoise2,splitted,amplitudes2] = ...
+                selectTemplates(templates(~isNoise),amplitudes,false,histRangeVal);
             
-            templates = [templates2;noiseTemplates];
-            amplitudes = [amplitudes2;noiseAmplitudes];
+            templates = [templates2(~isNoise2);noiseTemplates;templates2(isNoise2)];
+            amplitudes = [amplitudes2(~isNoise2);noiseAmplitudes;amplitudes2(isNoise2);];
             
-            isNoise = [isNoise;isNoiseOld];
+            numTemplates = sum(~isNoise2);
+            isNoise = [false(numTemplates,1); true(length(templates)-numTemplates,1)];
             
         end
+        
+    else
+        
+        %automatically determine noise templates
+        percentBelowNoiseThreshold = zeros(size(templates));
+        noiseVal = log10(sqrt(10.^noiseThreshold));
+        for i=1:length(templates)
+            percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
+        end
+        isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
+        
     end
-    
-    
-    %automatically determine noise templates
-    percentBelowNoiseThreshold = zeros(size(templates));
-    noiseVal = log10(sqrt(10.^noiseThreshold));
-    for i=1:length(templates)
-        percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
-    end 
-    isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
-    
     
     [~,idx] = sort(double(isNoise));
     templates = templates(idx);
     amplitudes = amplitudes(idx);
     isNoise = isNoise(idx);
-    percentBelowNoiseThreshold = percentBelowNoiseThreshold(idx);
-    outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold;
-        
+    
+    if ~options.humanLabel
+        percentBelowNoiseThreshold = percentBelowNoiseThreshold(idx);
+        outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold;
+    end
 
     %First, error out if no templates are generated
     if isempty(templates)
