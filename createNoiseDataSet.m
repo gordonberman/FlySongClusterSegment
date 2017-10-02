@@ -98,3 +98,9 @@ function [noiseData,fs,psd,maxP,sigmaNoise,threshold,percentNoise] = ...
   
     sigmaNoise = std(noiseData);
     percentNoise = mean(mask);
+        
+    
+        
+        
+        
+    
