@@ -44,11 +44,11 @@ function GetSongNoiseLevels(songlist,maxmaxP,fscsdir)
     end
     filestosave(find(strcmp(filestosave,'na'))) = [];
     %make a table with filenames and maxP values
-    convthresholds = sqrt(10.^thresholds);
+    convthresholds = sqrt(10.^threshold);
     fprintf(1,['The minimum noise threshold for files in the training ' ...
         'set is %.3f, or %.3f when converted; the latter should be ' ...
-        'used to set minnoise.'], min(thresholds), min(convthresholds));
-    outtab = table(fullfiles,maxP,sdNoise,thresholds,convthresholds);
+        'used to set minnoise.'], min(threshold), min(convthresholds));
+    outtab = table(fullfiles,maxP,sdNoise,threshold,convthresholds);
     [filedir,filebase,~]=fileparts(songlist);
     writetable(outtab,fullfile(filedir,[filebase '_withmaxP.csv']));
     %also write list of files under maxmaxP threshold

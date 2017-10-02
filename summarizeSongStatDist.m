@@ -1,5 +1,5 @@
 function summarizeSongStatDist(filelist, plotlabel, repopath, whichsumm, ...
-    litfile)
+    litfile, dosort)
     %Take a list of the output from doStatHist and summarize across
     %all files (need 'species' column to determine group to plot)
     %Input:
@@ -24,6 +24,11 @@ function summarizeSongStatDist(filelist, plotlabel, repopath, whichsumm, ...
     %Set default for whichsumm
     if nargin < 4 || isempty(whichsumm)
         whichsumm = 'StatMaxDensity';
+    end
+    
+    %Sort by name or leave in order of file listing
+    if nargin < 6 || isempty(dosort)
+        dosort = true;
     end
     
     %Save files with basename from filelist
@@ -62,6 +67,11 @@ function summarizeSongStatDist(filelist, plotlabel, repopath, whichsumm, ...
                     newstattable.WavFile = {songfile};
                 end
             end
+            %convert TemplateGroup column to cell array of strings
+            if isnumeric(newstattable.TemplateGroup)
+                newstattable.TemplateGroup = ...
+                    cellstr(num2str(newstattable.TemplateGroup));
+            end
             if exist('fullstattable','var') ~= 1
                 fullstattable = newstattable;
             else
@@ -72,6 +82,8 @@ function summarizeSongStatDist(filelist, plotlabel, repopath, whichsumm, ...
                     size(newstattable)
                     fullstattable.Properties.VariableNames
                     newstattable.Properties.VariableNames
+                    class(fullstattable.TemplateGroup)
+                    class(newstattable.TemplateGroup)
                     allfiles{f}
                     rethrow(MEnv)
                 end
@@ -114,26 +126,31 @@ function summarizeSongStatDist(filelist, plotlabel, repopath, whichsumm, ...
     
     %Make violin plot
     %For distributionPlot, need to use species column AND group column as 'groups'
-    %Paste together?
+    %Paste together separately for each species, if more than one group
     if ~ismember('speciesgroup', fullstattable.Properties.VariableNames)
+        fullstattable.speciesgroup = fullstattable.Species;
         if ismember('TemplateGroup', fullstattable.Properties.VariableNames)
             if isnumeric(fullstattable.TemplateGroup)
                 fullstattable.TemplateGroup = cellstr(num2str(fullstattable.TemplateGroup));
             end
-            fullstattable.speciesgroup = strcat(fullstattable.Species,{'\_'},...
-                fullstattable.TemplateGroup);
-        else
-            try
-                fullstattable.speciesgroup = fullstattable.Species;
-            catch MEurvar
-                fullstattable.Properties.VariableNames
-                rethrow(MEurvar)
+            fullstattable.TemplateGroup = strtrim(fullstattable.TemplateGroup);
+            uspeciesorig = unique(fullstattable.Species);
+            for u=1:length(uspeciesorig)
+                indexus = strfind(fullstattable.speciesgroup,uspeciesorig(u));
+                wrows = find(not(cellfun('isempty', indexus)));
+                if length(unique(fullstattable{wrows,'TemplateGroup'})) > 1
+                    fullstattable(wrows,'speciesgroup') = ...
+                        strcat(fullstattable{wrows,'Species'},{'\_'},...
+                        fullstattable{wrows,'TemplateGroup'});
+                end
             end
         end
     end
     %sort by speciesgroup
-    fullstattable = sortrows(fullstattable,'speciesgroup','ascend');
-    %distributionPlot_wm122016(fullstattable.(whichsumm),'groups',fullstattable.speciesgroup);
+    %add option to customize sort order
+    if dosort
+        fullstattable = sortrows(fullstattable,'speciesgroup','ascend');
+    end
     fprintf(1,'Plotting output by species (saving to\n%s)\n',...
         strjoin({outbase, whichsumm, 'violin.fig'},'_'));
     %figure
@@ -149,7 +166,11 @@ function summarizeSongStatDist(filelist, plotlabel, repopath, whichsumm, ...
     %columns as options in 'speciesgroup'
     forebjname = fullfile(outdir,strjoin({outbase, [whichsumm 'forjitter.csv']},'_'));
     if exist(forebjname,'file') ~= 2
-        uspecies = unique(fullstattable.speciesgroup);
+        if dosort
+            uspecies = unique(fullstattable.speciesgroup)
+        else
+            uspecies = unique(fullstattable.speciesgroup, 'stable')
+        end
         newdataarray = NaN(height(fullstattable),length(uspecies));
         for u=1:length(uspecies)
             %find rows containing this species
