@@ -41,5 +41,5 @@ function [signalPeakIdx, signalFreqIdx] = getSignalFreqIdx(peakIdxGroup,...
     end
     %sort freqs using same sort order as peaks
     [signalPeakIdx, sortidx] = sort(signalPeakIdx'); %to retain dimension from earlier version
-    signalFreqIdx = signalFreqIdx(sortidx);
+    signalFreqIdx = signalFreqIdx(sortidx)';
 end

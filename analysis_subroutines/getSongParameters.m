@@ -1,4 +1,4 @@
-function [pulsetrains, options] = getSongParameters(data, peakIdxGroup, ...
+function [pulsetrains, options] = getSongParameters(wavfile, peakIdxGroup, ...
     isNoise, dogrouped, options, freqIdxGroup)
     %processing script downstream of assignDataToTemplates
     %pulsetrains should be a structure containing data
@@ -7,6 +7,13 @@ function [pulsetrains, options] = getSongParameters(data, peakIdxGroup, ...
     %necessary options: fs, distance separating pulses
     %to be considered a new pulse train
     %reporting pulses, ipi, and ptl in milliseconds, cf in Hz
+    %first option used to be data, now wavfile:
+    if isnumeric(wavfile)
+        fprintf(1,'Getting pulse trains for data of length %d\n',...
+            length(wavfile));
+    else
+        fprintf(1,'Getting pulse trains for %s\n',wavfile);
+    end
     
     %Get the full options (including numIPIBins and IPI_sigma)
     %The two above are set in oneSongSummarize....
@@ -16,31 +23,25 @@ function [pulsetrains, options] = getSongParameters(data, peakIdxGroup, ...
     %IPI_sigma = options.IPI_sigma * options.fs / 1000;
     
     %only do the following if freqIdxGroup not provided:
-    signalPeakIdx = getSignalPeakIdx(peakIdxGroup, isNoise);
-    %need to find carrier frequency just for signal peaks as well
-    %if carrier frequency specified:
-    %[signalPeakIdx, signalFreqIdx] = getSignalFreqIdx(freqIdxGroup, isNoise);
+    if nargin < 6 || isempty(freqIdxGroup)
+        signalPeakIdx = getSignalPeakIdx(peakIdxGroup, isNoise);
+    else
+        %need to find carrier frequency just for signal peaks as well
+        %if carrier frequency specified:
+        [signalPeakIdx, signalFreqIdx] = getSignalFreqIdx(peakIdxGroup,...
+            freqIdxGroup, isNoise);
+    end
     if dogrouped
         signalPeakGroup = getSignalPeakGroup(signalPeakIdx, peakIdxGroup, ...
-            isNoise);
+            isNoise); %groups pertain to both peak Idx and Freq
         nagroup = length(peakIdxGroup) + 1;
     else
-        signalPeakIdx = getSignalPeakIdx(peakIdxGroup, isNoise);
+        %signalPeakIdx = getSignalPeakIdx(peakIdxGroup, isNoise);
         signalPeakGroup = zeros(length(signalPeakIdx));
         nagroup = 1;
     end
     ts = signalPeakIdx*1000/options.fs; %convert to milliseconds
     ipiall = diff(ts);
-    
-    %find max of IPI distribution through kernel density estimation
-    [Y,X] = hist(ipiall,options.numIPIBins);
-    Y = normalizeHist(X,Y);
-    IPI_sigma = options.IPI_sigma / (X(2) - X(1)); %convert to units of bin widths
-    Y = gaussianfilterdata(Y,IPI_sigma);   
-    s = fit(X',Y','spline');
-    modeIPI_estimate = fminsearch(@(x) -s(x),X(argmax(Y)));
-    %Use the maximum modeIPI_estimate across recordings to set summmaxIPI:
-    %summmaxIPI = modeIPI_estimate*3
 
     %Now use summmaxIPI to find pulse trains
     isConnected = ipiall <= options.summmaxIPI;
@@ -56,6 +57,11 @@ function [pulsetrains, options] = getSongParameters(data, peakIdxGroup, ...
         trainLengths{i} = ts(CC.PixelIdxList{i}(end)+1) - ts(CC.PixelIdxList{i}(1));
         %pulses are now in milliseconds
         pulses{i} = [ts(CC.PixelIdxList{i}) ts(CC.PixelIdxList{i}(end)+1)];
+        %the same indexing should also work for carrier frequencies
+        if exist('signalFreqIdx','var') == 1
+                cf{i} = [signalFreqIdx(CC.PixelIdxList{i}) ...
+                    signalFreqIdx(CC.PixelIdxList{i}(end)+1)];
+        end
         tmpgroup = [signalPeakGroup(CC.PixelIdxList{i}); ...
             signalPeakGroup(CC.PixelIdxList{i}(end)+1)];
         [groupmode,~,withmult] = mode(tmpgroup);
@@ -65,10 +71,6 @@ function [pulsetrains, options] = getSongParameters(data, peakIdxGroup, ...
             templateGroups(i) = groupmode;
         end
         ipi{i} = diff(pulses{i});
-        %get carrier frequency if available
-        %carrier frequency estimation will require some distance around
-        %peak?
-        %cf{i} = getCarrierFrequency(pulses{i});
     end
     pulsetrains = struct('pulses',pulses,'ipi',ipi,'cf',cf,'numPulses',...
         numPulses,'trainLengths',trainLengths,'templateGroups',...
