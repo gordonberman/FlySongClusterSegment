@@ -22,9 +22,9 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     %                       corresponding to the locations in allPeakIdx
     %coeffs -> L x 1 cell array of model PCA bases
     %projStds -> L x 1 cell array of model projection standard deviations
-    %carrierFrequencies -> N x 1 array of carrier frequencies for each
-    %pulse
-    
+    %freqIdxGroup -> L x 1 cell array of carrier frequencies for each
+    %                template group
+   
     addpath(genpath('./utilities/'));
     addpath(genpath('./subroutines/'));
     
@@ -95,13 +95,14 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     peakAmplitudes = zeros(N,1);
     carrierFrequencies = zeros(N,1);
     freqs = linspace(0,.5,ceil(diffThreshold/2))*Fs;
+    freqs = freqs(2:end);
     for i=1:N
         a = newData(peakIdx(i) + (-r:r));
         peakAmplitudes(i) = sqrt(mean(a.^2));
         normalizedPeaks(i,:) = a./peakAmplitudes(i).*sign(newData(peakIdx(i)));
         q = fft(normalizedPeaks(i,:));
         q = q.*conj(q);
-        q = q(1:length(freqs));
+        q = q(1+(1:length(freqs)));
         [~,maxIdx] = max(q);
         maxF = freqs(maxIdx);
         carrierFrequencies(i) = findExtremumParabola(freqs,q,3);
