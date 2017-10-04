@@ -37,7 +37,7 @@ function [pulsetrains, options] = getSongParameters(wavfile, peakIdxGroup, ...
         nagroup = length(peakIdxGroup) + 1;
     else
         %signalPeakIdx = getSignalPeakIdx(peakIdxGroup, isNoise);
-        signalPeakGroup = zeros(length(signalPeakIdx));
+        signalPeakGroup = zeros(length(signalPeakIdx))';
         nagroup = 1;
     end
     ts = signalPeakIdx*1000/options.fs; %convert to milliseconds
@@ -62,7 +62,7 @@ function [pulsetrains, options] = getSongParameters(wavfile, peakIdxGroup, ...
                 cf{i} = [signalFreqIdx(CC.PixelIdxList{i}) ...
                     signalFreqIdx(CC.PixelIdxList{i}(end)+1)];
         end
-        tmpgroup = [signalPeakGroup(CC.PixelIdxList{i}); ...
+        tmpgroup = [signalPeakGroup(CC.PixelIdxList{i}) ...
             signalPeakGroup(CC.PixelIdxList{i}(end)+1)];
         [groupmode,~,withmult] = mode(tmpgroup);
         if length(withmult) > 1

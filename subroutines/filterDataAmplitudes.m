@@ -55,7 +55,14 @@ function [out,mask,threshold,smoothedPeakLocations] = filterDataAmplitudes(...
         posts = posts(:,idx);
         
         %find mask and threshold
-        mask = (posts >= noise_posterior_threshold | y > obj.mu(idx)) & y > obj.mu(minIdx);
+        try
+            mask = (posts >= noise_posterior_threshold | y > obj.mu(idx)) & y > obj.mu(minIdx);
+        catch MEdimineq
+            size(posts)
+            size(noise_posterior_threshold)
+            noise_posterior_threshold
+            rethrow(MEdimineq)
+        end
         threshold = min(y(mask));
         
         if threshold < min_threshold

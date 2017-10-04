@@ -3,7 +3,7 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
     %To do: save plot of assigned templates
     %To do: split outputs into subdirectories
     %To do: make some outputs and plots optional
-    addpath(genpath('/net/mahler/wynn/repos/FlySongClusterSegment'));
+    addpath(genpath(pwd));
 
     %Set defaults for options
     if nargin < 5 || isempty(summmaxIPI)
@@ -26,7 +26,12 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
     
     %Create outdir, if it doesn't exist
     if exist(outdir, 'dir') ~= 7
-        mkdir(outdir);
+        try
+            mkdir(outdir);
+        catch MEperm
+            fprintf(1,'Cannot make directory %s; exiting\n',outdir);
+            rethrow(MEperm);
+        end
     end
     
     %Make basename for output from song, template, and options names
@@ -35,7 +40,13 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
     outbase = strjoin({songbase, tempbase},'_');
     optsdir = fullfile(outdir, 'optionsused');
     if exist(optsdir,'dir') ~= 7
-        mkdir(optsdir);
+        try
+            mkdir(optsdir);
+        catch MEperm2
+            fprintf(1,['Cannot make options directory\n\(%s\);\nSaving options' ...
+                'files to output directory:\n%s\n'],optsdir,outdir);
+            optsdir = outdir;
+        end
     end
     %optsfile = fullfile(outdir, [outbase '_options.mat']); %save for records
     optsfile = fullfile(optsdir, [outbase '_options.mat']); %save for records
@@ -69,7 +80,8 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
         [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,...
             noiseThreshold,freqIdxGroup] = assignDataToTemplates(song,outputData,options);
         save(fullfile(outdir,[outbase '_outputAssignTemplates.mat']), 'groupings',...
-            'peakIdxGroup','likes','allPeakIdx','allNormalizedPeaks','noiseThreshold');
+            'peakIdxGroup','likes','allPeakIdx','allNormalizedPeaks','noiseThreshold',...
+            'freqIdxGroup');
         if plotassign
             %make and save plot of assignment
             if exist(fullfile(outdir,[Species 'Assignments'])) ~= 7
@@ -86,7 +98,7 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
         end
     else
         load(fullfile(outdir,[outbase '_outputAssignTemplates.mat']),...
-            'peakIdxGroup');
+            'peakIdxGroup','freqIdxGroup');
     end
                  
     %Get pulse trains
