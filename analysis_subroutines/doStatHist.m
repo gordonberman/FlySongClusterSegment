@@ -1,4 +1,5 @@
 function doStatHist(pulsetrains, whichstat, options, outbase, Species)
+    %Testing 01/14/17: try getting the max density nearest the median
     %Take the output of getSongParameters and summarize
     %Make histogram of whichstat, along with a text file
     %Keep format similar to previous versions
@@ -87,22 +88,29 @@ function doStatHist(pulsetrains, whichstat, options, outbase, Species)
         %estimate mode of the IPI distribution
         StatMaxDensity = fminsearch(@(x) -s(x),X(argmax(Y)));
         MaxDensityPeakValue = s(StatMaxDensity);
+        %also estimate local maximum nearest median
+        %(may sometimes be more accurate than starting at mode of smoothed distribution)
+        StatMaxDensityNearMedian = fminsearch(@(x) -s(x),...
+            median(alltGstat,'omitnan'));
+        MaxDensityNearMedianPeakValue = s(StatMaxDensityNearMedian);
         
         %get other summaries
-        StatMean = mean(alltGstat);
-        StatMedian = median(alltGstat);
+        StatMean = mean(alltGstat,'omitnan');
+        StatMedian = median(alltGstat,'omitnan');
         StatLQ = quantile(alltGstat,0.25);
         StatUQ = quantile(alltGstat,0.75);
-        StatTot = sum(alltGstat);
+        StatTot = sum(alltGstat,'omitnan');
         NoObs = length(alltGstat);
         
         %Write summary data
         if hastempgroups
             stattab = table({Species},TemplateGroup,StatMean,StatMedian,StatMaxDensity,...
-                MaxDensityPeakValue,StatLQ,StatUQ,StatTot,NoObs);
+                MaxDensityPeakValue,StatMaxDensityNearMedian,...
+                MaxDensityNearMedianPeakValue,StatLQ,StatUQ,StatTot,NoObs);
         else
             stattab = table({Species},StatMean,StatMedian,StatMaxDensity,...
-            MaxDensityPeakValue,StatLQ,StatUQ,StatTot,NoObs);
+            MaxDensityPeakValue,StatMaxDensityNearMedian,...
+            MaxDensityNearMedianPeakValue,StatLQ,StatUQ,StatTot,NoObs);
         end
         stattab.Properties.VariableNames{'Var1'} = 'Species';
         writetable(stattab,strjoin({outbasetg, ['min' ...

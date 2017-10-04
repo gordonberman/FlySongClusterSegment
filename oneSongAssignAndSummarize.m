@@ -67,7 +67,7 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
             'file') ~= 2
         sprintf('Assigning data to templates\n');
         [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,...
-            noiseThreshold] = assignDataToTemplates(song,outputData,options);
+            noiseThreshold,freqIdxGroup] = assignDataToTemplates(song,outputData,options);
         save(fullfile(outdir,[outbase '_outputAssignTemplates.mat']), 'groupings',...
             'peakIdxGroup','likes','allPeakIdx','allNormalizedPeaks','noiseThreshold');
         if plotassign
@@ -93,12 +93,13 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
     if exist(fullfile(outdir,[outbase '_pulseTrains.mat']),'file') ~= 2
         if isfield(outputData,'templateGroupings')
             %pulsetrains = getSongParameters(song, peakIdxGroup, isNoise, ...
-            %    outputData.templateGroupings, options);
-            pulsetrains = getSongParameters(song, peakIdxGroup, ...
-                outputData.isNoiseTemplateGrouping, true, options);
+            %    outputData.templateGroupings, options)
+            [pulsetrains, options] = getSongParameters(songbase, ...
+                peakIdxGroup, outputData.isNoiseTemplateGrouping, true, ...
+                options, freqIdxGroup);
         else
-            pulsetrains = getSongParameters(song, peakIdxGroup, isNoise, ...
-                false, options);
+            [pulsetrains, options] = getSongParameters(songbase, ...
+                peakIdxGroup, isNoise, false, options, freqIdxGroup);
         end
         save(fullfile(outdir,[outbase '_pulseTrains.mat']),'pulsetrains');
     else
@@ -121,5 +122,8 @@ function oneSongAssignAndSummarize(songfile, tempfile, Species, ...
     end
     if exist(strjoin({outbase, 'trainLengths', outsuff},'_'),'file') ~= 2
         doStatHist(pulsetrains, 'trainLengths', options, fullfile(outdir,outbase), Species);
+    end
+    if exist(strjoin({outbase, 'cf', outsuff},'_'),'file') ~= 2
+        doStatHist(pulsetrains, 'cf', options, fullfile(outdir,outbase), Species);
     end
 end
