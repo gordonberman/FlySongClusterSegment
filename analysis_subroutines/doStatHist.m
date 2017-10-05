@@ -1,10 +1,14 @@
-function doStatHist(pulsetrains, whichstat, options, outbase, Species)
+function doStatHist(pulsetrains, whichstat, options, outbase, Species,...
+    doplots)
     %Testing 01/14/17: try getting the max density nearest the median
     %Take the output of getSongParameters and summarize
     %Make histogram of whichstat, along with a text file
     %Keep format similar to previous versions
     %To do: make plotting optional
     %To do: optionally save 'alltGStat' (all values of whichstat)
+    if nargin < 6 || isempty(doplots)
+        doplots = true;
+    end
     
     %Get the full options (including numIPIbins and IPI_sigma)
     options.setAll = false;
@@ -72,17 +76,28 @@ function doStatHist(pulsetrains, whichstat, options, outbase, Species)
         %Make histogram plot (before or after smoothing?)
         %numIPIBins = floor(length(alltGstat)/10);
         %hist(alltGstat,numIPIBins);
-        hist(alltGstat,100); %numIPIBins is too high for plotting
-        savefig(strjoin({outbasetg, ['min' ...
-            num2str(options.minpulse) 'pulse'], 'hist.fig'},'_'));
-        close;
-        
+        if doplots
+            hist(alltGstat,100); %numIPIBins is too high for plotting
+            savefig(strjoin({outbasetg, ['min' ...
+                num2str(options.minpulse) 'pulse'], 'hist.fig'},'_'));
+            close;
+        end
         %Run Gordon's mini-script to summarize (from createTemplates)
         %find IPI distribution through kernel density estimation
         [Y,X] = hist(alltGstat,options.numIPIBins);
+        if strcmp(whichstat,'cf')
+            Y = medfilt1(Y,3);  %filter to eliminate regular noise
+        end
         Y = normalizeHist(X,Y);
         IPI_sigma = options.IPI_sigma / (X(2) - X(1));
         Y = gaussianfilterdata(Y,IPI_sigma);   
+        %also plot output?
+        if doplots
+            plot(X,Y);
+            savefig(strjoin({outbasetg, ['min' ...
+                num2str(options.minpulse) 'pulse'], 'smoothed.fig'},'_'));
+            close;
+        end
         s = fit(X',Y','spline');
 
         %estimate mode of the IPI distribution
@@ -93,6 +108,9 @@ function doStatHist(pulsetrains, whichstat, options, outbase, Species)
         StatMaxDensityNearMedian = fminsearch(@(x) -s(x),...
             median(alltGstat,'omitnan'));
         MaxDensityNearMedianPeakValue = s(StatMaxDensityNearMedian);
+        StatMaxDensityNearSmoothedMedian = fminsearch(@(x) -s(x),...
+            median(X,'omitnan'));
+        MaxDensityNearSmoothedMedianPeakValue = s(StatMaxDensityNearSmoothedMedian);
         
         %get other summaries
         StatMean = mean(alltGstat,'omitnan');
@@ -106,11 +124,13 @@ function doStatHist(pulsetrains, whichstat, options, outbase, Species)
         if hastempgroups
             stattab = table({Species},TemplateGroup,StatMean,StatMedian,StatMaxDensity,...
                 MaxDensityPeakValue,StatMaxDensityNearMedian,...
-                MaxDensityNearMedianPeakValue,StatLQ,StatUQ,StatTot,NoObs);
+                MaxDensityNearMedianPeakValue,StatMaxDensityNearSmoothedMedian,...
+                MaxDensityNearSmoothedMedianPeakValue,StatLQ,StatUQ,StatTot,NoObs);
         else
             stattab = table({Species},StatMean,StatMedian,StatMaxDensity,...
             MaxDensityPeakValue,StatMaxDensityNearMedian,...
-            MaxDensityNearMedianPeakValue,StatLQ,StatUQ,StatTot,NoObs);
+            MaxDensityNearMedianPeakValue,StatMaxDensityNearSmoothedMedian,...
+            MaxDensityNearSmoothedMedianPeakValue,StatLQ,StatUQ,StatTot,NoObs);
         end
         stattab.Properties.VariableNames{'Var1'} = 'Species';
         writetable(stattab,strjoin({outbasetg, ['min' ...
