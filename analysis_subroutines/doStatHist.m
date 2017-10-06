@@ -55,6 +55,24 @@ function doStatHist(pulsetrains, whichstat, options, outbase, Species,...
                 end
             end
         end
+        %For cf, exclude pulses exactly at repetitive frequencies
+        if strcmp(whichstat,'cf')
+            if isfield(options,'repfreq')
+                %repfreq should represent the base frequency
+                %create an array of multiples of repfreq
+                freqtoexc = [options.repfreq round(options.repfreq*2,2) ...
+                    round(options.repfreq*3,2) round(options.repfreq*4,2) ...
+                    round(options.repfreq*5,2)];
+                olength = length(alltGstat);
+                %exclude these values from alltGstat
+                alltGstat = setdiff(alltGstat, freqtoexc);
+                if length(alltGstat) < olength
+                    fprintf(1, ['Removed %d carrier frequency values ' ...
+                        'as multiples of repfreq (%d)\n'], ...
+                        olength-length(alltGstat), options.repfreq);
+                end
+            end
+        end
         
         %Exclude if sample size below minno
         if length(alltGstat) < options.minno
@@ -90,27 +108,50 @@ function doStatHist(pulsetrains, whichstat, options, outbase, Species,...
         end
         Y = normalizeHist(X,Y);
         IPI_sigma = options.IPI_sigma / (X(2) - X(1));
-        Y = gaussianfilterdata(Y,IPI_sigma);   
+        Y = gaussianfilterdata(Y,IPI_sigma); 
+        finidx = isfinite(X) & isfinite(Y); %to remove issue with NaNs
         %also plot output?
-        if doplots
+        if doplots && sum(finidx) > 2
             plot(X,Y);
             savefig(strjoin({outbasetg, ['min' ...
                 num2str(options.minpulse) 'pulse'], 'smoothed.fig'},'_'));
             close;
         end
-        s = fit(X',Y','spline');
-
-        %estimate mode of the IPI distribution
-        StatMaxDensity = fminsearch(@(x) -s(x),X(argmax(Y)));
-        MaxDensityPeakValue = s(StatMaxDensity);
-        %also estimate local maximum nearest median
-        %(may sometimes be more accurate than starting at mode of smoothed distribution)
-        StatMaxDensityNearMedian = fminsearch(@(x) -s(x),...
-            median(alltGstat,'omitnan'));
-        MaxDensityNearMedianPeakValue = s(StatMaxDensityNearMedian);
-        StatMaxDensityNearSmoothedMedian = fminsearch(@(x) -s(x),...
-            median(X,'omitnan'));
-        MaxDensityNearSmoothedMedianPeakValue = s(StatMaxDensityNearSmoothedMedian);
+        if sum(finidx) > 2
+            try
+                s = fit(X(finidx)',Y(finidx)','spline');
+            catch MEfit
+                length(finidx)
+                sum(~isnan(X))
+                sum(~isnan(Y))
+                rethrow(MEfit);
+            end
+            %estimate mode of the IPI distribution
+            StatMaxDensity = fminsearch(@(x) -s(x),X(argmax(Y)));
+            MaxDensityPeakValue = s(StatMaxDensity);
+            %also estimate local maximum nearest median
+            %(may sometimes be more accurate than starting at mode of smoothed distribution)
+            StatMaxDensityNearMedian = fminsearch(@(x) -s(x),...
+                median(alltGstat,'omitnan'));
+            MaxDensityNearMedianPeakValue = s(StatMaxDensityNearMedian);
+            StatMaxDensityNearSmoothedMedian = fminsearch(@(x) -s(x),...
+                median(X,'omitnan'));
+            MaxDensityNearSmoothedMedianPeakValue = s(StatMaxDensityNearSmoothedMedian);
+        else
+            if hastempgroups
+            fprintf(1,['Insufficient smoothed data for estimating ' ...
+                'mode for group %i for:\n%s\n'], TemplateGroup, outbase);
+            else
+                fprintf(1,['Insufficient smoothed data for estimating ' ...
+                'mode for:\n%s\n'], outbase);
+            end
+            StatMaxDensity = NaN;
+            MaxDensityPeakValue = NaN;
+            StatMaxDensityNearMedian = NaN;
+            MaxDensityNearMedianPeakValue = NaN;
+            StatMaxDensityNearSmoothedMedian = NaN;
+            MaxDensityNearSmoothedMedianPeakValue = NaN;  
+        end
         
         %get other summaries
         StatMean = mean(alltGstat,'omitnan');
