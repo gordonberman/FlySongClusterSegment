@@ -1,4 +1,4 @@
-function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThreshold,freqIdxGroup] = ...
+function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThreshold,freqIdxGroup,peakAmplitudes] = ...
                      assignDataToTemplates(data,outputData,options)
 
                  
@@ -24,6 +24,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     %projStds -> L x 1 cell array of model projection standard deviations
     %freqIdxGroup -> L x 1 cell array of carrier frequencies for each
     %                template group
+    %peakAmplitudes -> N x 1 array of peak amplitudes
    
     addpath(genpath('./utilities/'));
     addpath(genpath('./subroutines/'));
@@ -44,6 +45,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     options = makeParameterStructure(options);
     
     Fs = options.fs;
+    dt = 1/Fs;
 
     
     %find all potential peaks in the new data set
@@ -94,21 +96,24 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);
     carrierFrequencies = zeros(N,1);
-    freqs = linspace(0,.5,ceil(diffThreshold/2))*Fs;
-    freqs = freqs(2:end);
-    for i=1:N
+    minF = 5*ceil(1 / (r*dt*5));
+    freqs = minF:5:500;
+    freqs = freqs(freqs < .5/dt)';
+    parfor i=1:N
+        
         a = newData(peakIdx(i) + (-r:r));
         peakAmplitudes(i) = sqrt(mean(a.^2));
         normalizedPeaks(i,:) = a./peakAmplitudes(i).*sign(newData(peakIdx(i)));
-        q = fft(normalizedPeaks(i,:));
-        q = q.*conj(q);
-        q = q(1+(1:length(freqs)));
-        [~,maxIdx] = max(q);
+        
+        q = fastWavelet_morlet_convolution_parallel(a,freqs,2*pi,dt);
+        maxQ = max(q,[],2);
+        [~,maxIdx] = max(maxQ);
         maxF = freqs(maxIdx);
-        carrierFrequencies(i) = findExtremumParabola(freqs,q,3);
+        carrierFrequencies(i) = findExtremumParabola(freqs,maxQ,3);
         if carrierFrequencies(i) < maxF/2 || carrierFrequencies(i) > maxF*1.5
             carrierFrequencies(i) = maxF;
         end
+
     end
     
     allPeakIdx = peakIdx;
