@@ -264,6 +264,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         projStds = cell(L,1);
         means = cell(L,1);
         L_templates = zeros(L,1);
+        projections = cell(L,1);
         fprintf(1,'   Finding Template Bases and Projections\n');
         for i=1:L
             
@@ -277,6 +278,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
             [coeffs{i},scores,~] = pca(templates{i});
             
             projStds{i} = std(scores);
+            projections{i} = scores;
         end
         
         
@@ -298,6 +300,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         outputData.projStds = projStds;
         outputData.L_templates = L_templates;
         outputData.means = means;
+        outputData.projections = projections;
         
         isNoise = outputData.isNoise;
         
