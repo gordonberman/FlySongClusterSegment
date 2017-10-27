@@ -137,7 +137,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         peakAmplitudes(i) = sqrt(mean(a.^2));
         normalizedPeaks(i,:) = (a./peakAmplitudes(i)).*signs(i);
     end
-
+    
     %save output data
     outputData.noiseThreshold = noiseThreshold;
     outputData.diffThreshold = diffThreshold;
@@ -158,8 +158,8 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         peakIdx = peakIdx(q);
         scores = scores(q,:);
     end
-        
-
+    
+    
     allNormalizedPeaks = normalizedPeaks;
     allPeakIdx = peakIdx;
     allScores = scores(:,1:options.template_pca_dimension);
@@ -167,10 +167,10 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     fprintf(1,'   Clustering Peaks\n');
     kmeans_options = statset('MaxIter',options.kmeans_maxIter);
-           
+    
     idx = kmeans(scores,options.k,'replicates',options.kmeans_replicates,'options',kmeans_options);
     clusterIdx = idx;
-        
+    
     templates = cell(options.k,1);
     amplitudes = cell(options.k,1);
     for i=1:options.k
@@ -227,7 +227,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         percentBelowNoiseThreshold = percentBelowNoiseThreshold(idx);
         outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold;
     end
-
+    
     %First, error out if no templates are generated
     if isempty(templates)
         error('     No templates generated!');
@@ -243,19 +243,24 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     outputData.isNoise = isNoise;
     outputData.templates = templates;
-    outputData.amplitudes = amplitudes;   
+    outputData.amplitudes = amplitudes;
     
     close all
     
-       
+    
     %make template plots
     if ~isempty(templates)
         
+        
         if plotsOn
-            figure
+            figure(42343)
+            clf
             makeTemplateHistograms(templates,histogramBins,[],[-.5 .5]*sqrt(outputData.diffThreshold));
+            drawnow
         end
         
+        %test = true;
+        %while test
         
         %defining templates
         L = length(templates);
@@ -264,11 +269,11 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         projStds = cell(L,1);
         means = cell(L,1);
         L_templates = zeros(L,1);
-        projections = cell(L,1);
+        
         fprintf(1,'   Finding Template Bases and Projections\n');
         for i=1:L
             
-            fprintf(1,'      Template #%2i\n',i);
+            %fprintf(1,'      Template #%2i\n',i);
             L_templates(i) = length(templates{i}(:,1));
             
             %find Data Set Mean
@@ -278,7 +283,6 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
             [coeffs{i},scores,~] = pca(templates{i});
             
             projStds{i} = std(scores);
-            projections{i} = scores;
         end
         
         
@@ -295,12 +299,69 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
             projStds{i} = projStds{i}(options.first_mode:q);
         end
         
+        %             likes = cell(L,1);
+        %             count = 0;
+        %             for i=1:L
+        %                 likes{i} = zeros(length(templates{i}(:,1)),L);
+        %                 for j=1:L
+        %                     projections = bsxfun(@minus,templates{i},means{j})*coeffs{j};
+        %                     likes{i}(:,j) = findDataSetLikelihoods(projections,zeros(size(means{j})),projStds{j});
+        %                 end
+        %                 [~,idx] = max(likes{i},[],2);
+        %                 if sum(idx ~= i) > 0
+        %                     count = count + sum(idx~=i);
+        %                 end
+        %             end
+        %             count
+        %
+        %             all_likes = cell2mat(likes);
+        %             if count > .01*length(all_likes(:,1))
+        %
+        %                 [~,idx] = max(all_likes,[],2);
+        %
+        %                 all_templates = cell2mat(templates);
+        %                 all_amplitudes = cell2mat(amplitudes);
+        %                 templates = cell(L,1);
+        %                 for j=1:L
+        %                     templates{j} = all_templates(idx == j,:);
+        %                     amplitudes{j} = all_amplitudes(idx == j);
+        %                 end
+        %
+        %                 percentBelowNoiseThreshold = zeros(size(templates));
+        %                 noiseVal = log10(sqrt(10.^noiseThreshold));
+        %                 for i=1:length(templates)
+        %                     percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
+        %                 end
+        %                 isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
+        %
+        %
+        %                 if isempty(templates)
+        %                     error('     No templates generated!');
+        %                 end
+        %
+        %                 templateSizes = zeros(length(templates),1);
+        %                 for i=1:length(templates)
+        %                     templateSizes(i) = length(templates{i}(:,1));
+        %                 end
+        %                 templates = templates(templateSizes >= options.min_template_size);
+        %                 isNoise = isNoise(templateSizes >= options.min_template_size);
+        %                 amplitudes = amplitudes(templateSizes >= options.min_template_size);
+        %
+        %                 outputData.isNoise = isNoise;
+        %                 outputData.templates = templates;
+        %                 outputData.amplitudes = amplitudes;
+        %
+        %             else
+        %                 test = false;
+        %             end
+        
+        
+        %end
         
         outputData.coeffs = coeffs;
         outputData.projStds = projStds;
         outputData.L_templates = L_templates;
         outputData.means = means;
-        outputData.projections = projections;
         
         isNoise = outputData.isNoise;
         
