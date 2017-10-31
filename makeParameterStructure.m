@@ -88,6 +88,9 @@ function options = makeParameterStructure(options)
     %butterworth high-pass filter cut-off order (default = 6)
     butterworth_order = 6;
     
+    %Toggle for using likelihood to refine clusterings (default = false)
+    refine_clusters = false;
+    
     
     %%%%%%%% t-SNE options %%%%%%%%
     
@@ -371,6 +374,10 @@ function options = makeParameterStructure(options)
     
     if ~isfield(options,'maxCarrierFrequency') || isempty(options.maxCarrierFrequency)
         options.maxCarrierFrequency = maxCarrierFrequency;
+    end
+    
+    if ~isfield(options,'refine_clusters') || isempty(options.refine_clusters)
+        options.refine_clusters = refine_clusters;
     end
     
     

@@ -93,7 +93,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     
     fprintf(1,'   Finding Carrier Frequencies\n');
     r = (diffThreshold-1)/2;
-    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); %added to eliminate edge cases
+    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); 
     N = length(peakIdx);
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);

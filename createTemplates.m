@@ -251,7 +251,6 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     %make template plots
     if ~isempty(templates)
         
-        
         if plotsOn
             figure(42343)
             clf
@@ -259,102 +258,111 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
             drawnow
         end
         
-        %test = true;
-        %while test
-        
-        %defining templates
-        L = length(templates);
-        d = length(templates{1}(1,:));
-        coeffs = cell(L,1);
-        projStds = cell(L,1);
-        means = cell(L,1);
-        L_templates = zeros(L,1);
-        
+        test = true;
         fprintf(1,'   Finding Template Bases and Projections\n');
-        for i=1:L
+        while test
             
-            %fprintf(1,'      Template #%2i\n',i);
-            L_templates(i) = length(templates{i}(:,1));
+            if ~options.refine_clusters
+                test = false;
+            end
             
-            %find Data Set Mean
-            means{i} = mean(templates{i});
+            %defining templates
+            L = length(templates);
+            d = length(templates{1}(1,:));
+            coeffs = cell(L,1);
+            projStds = cell(L,1);
+            means = cell(L,1);
+            L_templates = zeros(L,1);
             
-            %perform PCA on set of normalized peaks
-            [coeffs{i},scores,~] = pca(templates{i});
             
-            projStds{i} = std(scores);
+            for i=1:L
+                
+                %fprintf(1,'      Template #%2i\n',i);
+                L_templates(i) = length(templates{i}(:,1));
+                
+                %find Data Set Mean
+                means{i} = mean(templates{i});
+                
+                %perform PCA on set of normalized peaks
+                [coeffs{i},scores,~] = pca(templates{i});
+                
+                projStds{i} = std(scores);
+            end
+            
+            
+            %adjust bases sets for sub-sampled data sets
+            minLength = min(L_templates);
+            if minLength < 2*d
+                q = round(minLength / 2);
+            else
+                q = d;
+            end
+            
+            for i=1:L
+                coeffs{i} = coeffs{i}(:,options.first_mode:q);
+                projStds{i} = projStds{i}(options.first_mode:q);
+            end
+            
+            likes = cell(L,1);
+            count = 0;
+            for i=1:L
+                likes{i} = zeros(length(templates{i}(:,1)),L);
+                for j=1:L
+                    projections = bsxfun(@minus,templates{i},means{j})*coeffs{j};
+                    likes{i}(:,j) = findDataSetLikelihoods(projections,zeros(size(means{j})),projStds{j});
+                end
+                [~,idx] = max(likes{i},[],2);
+                if sum(idx ~= i) > 0
+                    count = count + sum(idx~=i);
+                end
+            end
+                        
+            all_likes = cell2mat(likes);
+            if count > .01*length(all_likes(:,1))
+                
+                [~,idx] = max(all_likes,[],2);
+                
+                all_templates = cell2mat(templates);
+                all_amplitudes = cell2mat(amplitudes);
+                templates = cell(L,1);
+                for j=1:L
+                    templates{j} = all_templates(idx == j,:);
+                    amplitudes{j} = all_amplitudes(idx == j);
+                end
+                
+                percentBelowNoiseThreshold = zeros(size(templates));
+                noiseVal = log10(sqrt(10.^noiseThreshold));
+                for i=1:length(templates)
+                    percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
+                end
+                isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
+                
+                
+                if isempty(templates)
+                    error('     No templates generated!');
+                end
+                
+                templateSizes = zeros(length(templates),1);
+                for i=1:length(templates)
+                    templateSizes(i) = length(templates{i}(:,1));
+                end
+                templates = templates(templateSizes >= options.min_template_size);
+                isNoise = isNoise(templateSizes >= options.min_template_size);
+                amplitudes = amplitudes(templateSizes >= options.min_template_size);
+                
+                [~,idx] = sort(double(isNoise));
+                templates = templates(idx);
+                amplitudes = amplitudes(idx);
+                isNoise = isNoise(idx);
+                
+                outputData.isNoise = isNoise;
+                outputData.templates = templates;
+                outputData.amplitudes = amplitudes;
+                
+            else
+                test = false;
+            end
         end
-        
-        
-        %adjust bases sets for sub-sampled data sets
-        minLength = min(L_templates);
-        if minLength < 2*d
-            q = round(minLength / 2);
-        else
-            q = d;
-        end
-        
-        for i=1:L
-            coeffs{i} = coeffs{i}(:,options.first_mode:q);
-            projStds{i} = projStds{i}(options.first_mode:q);
-        end
-        
-        %             likes = cell(L,1);
-        %             count = 0;
-        %             for i=1:L
-        %                 likes{i} = zeros(length(templates{i}(:,1)),L);
-        %                 for j=1:L
-        %                     projections = bsxfun(@minus,templates{i},means{j})*coeffs{j};
-        %                     likes{i}(:,j) = findDataSetLikelihoods(projections,zeros(size(means{j})),projStds{j});
-        %                 end
-        %                 [~,idx] = max(likes{i},[],2);
-        %                 if sum(idx ~= i) > 0
-        %                     count = count + sum(idx~=i);
-        %                 end
-        %             end
-        %             count
-        %
-        %             all_likes = cell2mat(likes);
-        %             if count > .01*length(all_likes(:,1))
-        %
-        %                 [~,idx] = max(all_likes,[],2);
-        %
-        %                 all_templates = cell2mat(templates);
-        %                 all_amplitudes = cell2mat(amplitudes);
-        %                 templates = cell(L,1);
-        %                 for j=1:L
-        %                     templates{j} = all_templates(idx == j,:);
-        %                     amplitudes{j} = all_amplitudes(idx == j);
-        %                 end
-        %
-        %                 percentBelowNoiseThreshold = zeros(size(templates));
-        %                 noiseVal = log10(sqrt(10.^noiseThreshold));
-        %                 for i=1:length(templates)
-        %                     percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
-        %                 end
-        %                 isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
-        %
-        %
-        %                 if isempty(templates)
-        %                     error('     No templates generated!');
-        %                 end
-        %
-        %                 templateSizes = zeros(length(templates),1);
-        %                 for i=1:length(templates)
-        %                     templateSizes(i) = length(templates{i}(:,1));
-        %                 end
-        %                 templates = templates(templateSizes >= options.min_template_size);
-        %                 isNoise = isNoise(templateSizes >= options.min_template_size);
-        %                 amplitudes = amplitudes(templateSizes >= options.min_template_size);
-        %
-        %                 outputData.isNoise = isNoise;
-        %                 outputData.templates = templates;
-        %                 outputData.amplitudes = amplitudes;
-        %
-        %             else
-        %                 test = false;
-        %             end
-        
         
         %end
         
