@@ -62,6 +62,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     median_filter_length = round(options.median_filter_length * Fs / 1000);
     noise_posterior_threshold = options.noise_posterior_threshold;
     diff_threshold_multiplier = options.diff_threshold_multiplier;
+    maxF = options.maxCarrierFrequency;
     if min_noise_threshold > 0
         min_noise_threshold = log10(min_noise_threshold.^2);
     else
@@ -90,6 +91,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
         min_noise_threshold,noise_posterior_threshold);
     
     
+    fprintf(1,'   Finding Carrier Frequencies\n');
     r = (diffThreshold-1)/2;
     peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); %added to eliminate edge cases
     N = length(peakIdx);
@@ -97,21 +99,27 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     peakAmplitudes = zeros(N,1);
     carrierFrequencies = zeros(N,1);
     minF = 5*ceil(1 / (r*dt*5));
-    freqs = minF:5:500;
+    freqs = minF:5:maxF;
     freqs = freqs(freqs < .5/dt)';
+    medfiltLength = ceil((1/maxF)/dt);
     parfor i=1:N
         
         a = newData(peakIdx(i) + (-r:r));
         peakAmplitudes(i) = sqrt(mean(a.^2));
         normalizedPeaks(i,:) = a./peakAmplitudes(i).*sign(newData(peakIdx(i)));
         
+        a = medfilt1(a,medfiltLength);
         q = fastWavelet_morlet_convolution_parallel(a,freqs,2*pi,dt);
-        maxQ = max(q,[],2);
-        [~,maxIdx] = max(maxQ);
-        maxF = freqs(maxIdx);
-        carrierFrequencies(i) = findExtremumParabola(freqs,maxQ,3);
-        if carrierFrequencies(i) < maxF/2 || carrierFrequencies(i) > maxF*1.5
-            carrierFrequencies(i) = maxF;
+        maxQ = q(:,r+1);
+        maxIdxs = find(imregionalmax(maxQ));
+        [~,maxIdx] = max(maxQ(maxIdxs));
+        maxIdx = maxIdxs(maxIdx);
+        if isempty(maxIdx) || maxIdx <= 2 || maxIdx >= length(freqs) - 2
+            [~,maxIdx] = max(maxQ);
+            carrierFrequencies(i) = freqs(maxIdx);
+        else
+            idx = maxIdx + (-2:2);
+            carrierFrequencies(i) = findExtremumParabola(freqs(idx),maxQ(idx),2);
         end
 
     end

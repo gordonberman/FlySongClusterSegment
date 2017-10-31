@@ -51,6 +51,9 @@ function options = makeParameterStructure(options)
     %maximum IPI to fit in milliseconds (default = 500)
     maxIPI = 500;
     
+    %maximum carrier frequency in Hz (default = 1000)
+    maxCarrierFrequency = 1000;
+    
     %smoothing sigma for IPI kernel density estimation in milliseconds
     %(default = 1 ms)
     IPI_sigma = 1;
@@ -365,6 +368,11 @@ function options = makeParameterStructure(options)
     if ~isfield(options,'run_tsne') || isempty(options.run_tsne)
         options.run_tsne = run_tsne;
     end
+    
+    if ~isfield(options,'maxCarrierFrequency') || isempty(options.maxCarrierFrequency)
+        options.maxCarrierFrequency = maxCarrierFrequency;
+    end
+    
     
     
     
