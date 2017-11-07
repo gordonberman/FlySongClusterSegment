@@ -98,7 +98,7 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);
     carrierFrequencies = zeros(N,1);
-    minF = 5*ceil(1 / (r*dt*5));
+    minF = 5*ceil(1 / (2*r*dt*5));
     freqs = minF:5:maxF;
     freqs = freqs(freqs < .5/dt)';
     medfiltLength = ceil((1/maxF)/dt);
