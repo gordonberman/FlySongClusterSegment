@@ -1,5 +1,5 @@
 function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allScores,options] = ...
-                                createTemplates(data,options,plotsOn)
+                                createTemplates_wm112116(data,options,plotsOn)
     
     %Inputs:
                  
@@ -137,7 +137,7 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         peakAmplitudes(i) = sqrt(mean(a.^2));
         normalizedPeaks(i,:) = (a./peakAmplitudes(i)).*signs(i);
     end
-    
+
     %save output data
     outputData.noiseThreshold = noiseThreshold;
     outputData.diffThreshold = diffThreshold;
@@ -158,8 +158,8 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
         peakIdx = peakIdx(q);
         scores = scores(q,:);
     end
-    
-    
+        
+
     allNormalizedPeaks = normalizedPeaks;
     allPeakIdx = peakIdx;
     allScores = scores(:,1:options.template_pca_dimension);
@@ -167,10 +167,10 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     fprintf(1,'   Clustering Peaks\n');
     kmeans_options = statset('MaxIter',options.kmeans_maxIter);
-    
+           
     idx = kmeans(scores,options.k,'replicates',options.kmeans_replicates,'options',kmeans_options);
     clusterIdx = idx;
-    
+        
     templates = cell(options.k,1);
     amplitudes = cell(options.k,1);
     for i=1:options.k
@@ -184,50 +184,41 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     
     
     %uncomment this to allow for human annotation of templates
-    if options.humanLabel
-        
-        histRangeVal = .5*sqrt(outputData.diffThreshold);
-        splitted = true;
-        isNoise = false(size(templates));
-        while splitted
-            
-            noiseTemplates = templates(isNoise);
-            noiseAmplitudes = amplitudes(isNoise);
-            %isNoiseOld = isNoise(isNoise);
-            
-            [templates2,isNoise2,splitted,amplitudes2] = ...
-                selectTemplates(templates(~isNoise),amplitudes,false,histRangeVal);
-            
-            templates = [templates2(~isNoise2);noiseTemplates;templates2(isNoise2)];
-            amplitudes = [amplitudes2(~isNoise2);noiseAmplitudes;amplitudes2(isNoise2);];
-            
-            numTemplates = sum(~isNoise2);
-            isNoise = [false(numTemplates,1); true(length(templates)-numTemplates,1)];
-            
-        end
-        
-    else
-        
-        %automatically determine noise templates
-        percentBelowNoiseThreshold = zeros(size(templates));
-        noiseVal = log10(sqrt(10.^noiseThreshold));
-        for i=1:length(templates)
-            percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
-        end
-        isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
-        
-    end
+    %     splitted = true;
+    %     isNoise = false(size(templates));
+    %     while splitted
+    %
+    %         noiseTemplates = templates(isNoise);
+    %         noiseAmplitudes = amplitudes(isNoise);
+    %         isNoiseOld = isNoise(isNoise);
+    %
+    %         [templates2,isNoise,splitted,amplitudes2] = selectTemplates(templates(~isNoise),amplitudes,false);
+    %
+    %         templates = [templates2;noiseTemplates];
+    %         amplitudes = [amplitudes2;noiseAmplitudes];
+    %
+    %         isNoise = [isNoise;isNoiseOld];
+    %
+    %     end
+    
+    
+    %automatically determine noise templates
+    percentBelowNoiseThreshold = zeros(size(templates));
+    noiseVal = log10(sqrt(10.^noiseThreshold));
+    for i=1:length(templates)
+        percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
+    end 
+    isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
+    
     
     [~,idx] = sort(double(isNoise));
     templates = templates(idx);
     amplitudes = amplitudes(idx);
     isNoise = isNoise(idx);
-    
-    if ~options.humanLabel
-        percentBelowNoiseThreshold = percentBelowNoiseThreshold(idx);
-        outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold;
-    end
-    
+    percentBelowNoiseThreshold = percentBelowNoiseThreshold(idx);
+    outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold;
+        
+
     %First, error out if no templates are generated
     if isempty(templates)
         error('     No templates generated!');
@@ -240,159 +231,82 @@ function [outputData,allPeakIdx,allNormalizedPeaks,peakAmplitudes,isNoise,allSco
     templates = templates(templateSizes >= options.min_template_size);
     isNoise = isNoise(templateSizes >= options.min_template_size);
     amplitudes = amplitudes(templateSizes >= options.min_template_size);
+    percentBelowNoiseThreshold = percentBelowNoiseThreshold(templateSizes >= options.min_template_size); %modified 11/17/16
     
     outputData.isNoise = isNoise;
     outputData.templates = templates;
-    outputData.amplitudes = amplitudes;
+    outputData.amplitudes = amplitudes;  
+    outputData.percentBelowNoiseThreshold = percentBelowNoiseThreshold; %modified 11/17/16
     
     close all
     
-    
     %make template plots
-    if ~isempty(templates)
-        
-        if plotsOn
-            figure(42343)
-            clf
-            makeTemplateHistograms(templates,histogramBins,[],[-.5 .5]*sqrt(outputData.diffThreshold));
-            drawnow
-        end
-        
-        test = true;
-        fprintf(1,'   Finding Template Bases and Projections\n');
-        while test
-            
-            if ~options.refine_clusters
-                test = false;
-            end
-            
-            %defining templates
-            L = length(templates);
-            d = length(templates{1}(1,:));
-            coeffs = cell(L,1);
-            projStds = cell(L,1);
-            means = cell(L,1);
-            L_templates = zeros(L,1);
-            
-            
-            for i=1:L
-                
-                %fprintf(1,'      Template #%2i\n',i);
-                L_templates(i) = length(templates{i}(:,1));
-                
-                %find Data Set Mean
-                means{i} = mean(templates{i});
-                
-                %perform PCA on set of normalized peaks
-                [coeffs{i},scores,~] = pca(templates{i});
-                
-                projStds{i} = std(scores);
-            end
-            
-            
-            %adjust bases sets for sub-sampled data sets
-            minLength = min(L_templates);
-            if minLength < 2*d
-                q = round(minLength / 2);
-            else
-                q = d;
-            end
-            
-            for i=1:L
-                coeffs{i} = coeffs{i}(:,options.first_mode:q);
-                projStds{i} = projStds{i}(options.first_mode:q);
-            end
-            
-            likes = cell(L,1);
-            count = 0;
-            for i=1:L
-                likes{i} = zeros(length(templates{i}(:,1)),L);
-                for j=1:L
-                    projections = bsxfun(@minus,templates{i},means{j})*coeffs{j};
-                    likes{i}(:,j) = findDataSetLikelihoods(projections,zeros(size(means{j})),projStds{j});
-                end
-                [~,idx] = max(likes{i},[],2);
-                if sum(idx ~= i) > 0
-                    count = count + sum(idx~=i);
-                end
-            end
-                        
-            all_likes = cell2mat(likes);
-            if count > .01*length(all_likes(:,1))
-                
-                [~,idx] = max(all_likes,[],2);
-                
-                all_templates = cell2mat(templates);
-                all_amplitudes = cell2mat(amplitudes);
-                templates = cell(L,1);
-                for j=1:L
-                    templates{j} = all_templates(idx == j,:);
-                    amplitudes{j} = all_amplitudes(idx == j);
-                end
-                
-                percentBelowNoiseThreshold = zeros(size(templates));
-                noiseVal = log10(sqrt(10.^noiseThreshold));
-                for i=1:length(templates)
-                    percentBelowNoiseThreshold(i) = mean(log10(amplitudes{i}) < noiseVal);
-                end
-                isNoise = percentBelowNoiseThreshold > amplitude_threshold | isNoise;
-                
-                
-                if isempty(templates)
-                    error('     No templates generated!');
-                end
-                
-                templateSizes = zeros(length(templates),1);
-                for i=1:length(templates)
-                    templateSizes(i) = length(templates{i}(:,1));
-                end
-                templates = templates(templateSizes >= options.min_template_size);
-                isNoise = isNoise(templateSizes >= options.min_template_size);
-                amplitudes = amplitudes(templateSizes >= options.min_template_size);
-                
-                [~,idx] = sort(double(isNoise));
-                templates = templates(idx);
-                amplitudes = amplitudes(idx);
-                isNoise = isNoise(idx);
-                
-                outputData.isNoise = isNoise;
-                outputData.templates = templates;
-                outputData.amplitudes = amplitudes;
-                
-            else
-                test = false;
-            end
-        end
-        
-        %end
-        
-        outputData.coeffs = coeffs;
-        outputData.projStds = projStds;
-        outputData.L_templates = L_templates;
-        outputData.means = means;
-        
-        isNoise = outputData.isNoise;
-        
-        
-        if options.run_tsne
-            fprintf(1,'   Computing t-SNE Embedding\n');
-            options.signalLabels = [];
-            options.tsne_readout = 25;
-            [yData,~,~,~] = run_tSne(allScores,options);
-            outputData.yData = yData;
-            outputData.idx = idx;
-            figure
-            scatter(yData(:,1),yData(:,2),[],clusterIdx,'filled')
-            colormap(jet)
-            axis equal tight off
-            colorbar
-            set(gca,'fontsize',16,'fontweight','bold')
-        end
-        
-        
-    else
-       
-        fprintf(1,'All Templates are Empty.  Attempt adjusting the smoothingLength_noise parameter.\n')
-              
-        
+    if plotsOn
+        figure
+        makeTemplateHistograms_wm112116(templates,histogramBins,[],...
+            [-.5 .5]*sqrt(outputData.diffThreshold),isNoise,...
+            percentBelowNoiseThreshold); %modified 11/17/16
     end
+    
+    
+    %defining templates
+    L = length(templates);
+    d = length(templates{1}(1,:));
+    coeffs = cell(L,1);
+    projStds = cell(L,1);
+    means = cell(L,1);
+    L_templates = zeros(L,1);
+    fprintf(1,'   Finding Template Bases and Projections\n');
+    for i=1:L
+        
+        fprintf(1,'      Template #%2i\n',i);
+        L_templates(i) = length(templates{i}(:,1));
+        
+        %find Data Set Mean
+        means{i} = mean(templates{i});
+    
+        %perform PCA on set of normalized peaks
+        [coeffs{i},scores,~] = pca(templates{i});
+        
+        projStds{i} = std(scores);
+    end
+    
+    
+    %adjust bases sets for sub-sampled data sets
+    minLength = min(L_templates);
+    if minLength < 2*d
+        q = round(minLength / 2);
+    else
+        q = d;
+    end
+    
+    for i=1:L
+        coeffs{i} = coeffs{i}(:,options.first_mode:q);
+        projStds{i} = projStds{i}(options.first_mode:q);
+    end
+    
+    
+    outputData.coeffs = coeffs;
+    outputData.projStds = projStds;
+    outputData.L_templates = L_templates;
+    outputData.means = means;
+
+    isNoise = outputData.isNoise;
+    
+    
+    if options.run_tsne
+        fprintf(1,'   Computing t-SNE Embedding\n');
+        options.signalLabels = [];
+        options.tsne_readout = 25;
+        [yData,~,~,~] = run_tSne(allScores,options);
+        outputData.yData = yData;
+        outputData.idx = idx;
+        figure
+        scatter(yData(:,1),yData(:,2),[],clusterIdx,'filled')
+        colormap(jet)
+        axis equal tight off 
+        colorbar
+        set(gca,'fontsize',16,'fontweight','bold')
+    end
+    
+    

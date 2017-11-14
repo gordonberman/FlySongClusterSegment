@@ -1,4 +1,4 @@
-function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThreshold,freqIdxGroup,peakAmplitudes] = ...
+function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThreshold] = ...
                      assignDataToTemplates(data,outputData,options)
 
                  
@@ -22,10 +22,8 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     %                       corresponding to the locations in allPeakIdx
     %coeffs -> L x 1 cell array of model PCA bases
     %projStds -> L x 1 cell array of model projection standard deviations
-    %freqIdxGroup -> L x 1 cell array of carrier frequencies for each
-    %                template group
-    %peakAmplitudes -> N x 1 array of peak amplitudes
-   
+    
+    
     addpath(genpath('./utilities/'));
     addpath(genpath('./subroutines/'));
     
@@ -45,7 +43,6 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     options = makeParameterStructure(options);
     
     Fs = options.fs;
-    dt = 1/Fs;
 
     
     %find all potential peaks in the new data set
@@ -62,7 +59,6 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     median_filter_length = round(options.median_filter_length * Fs / 1000);
     noise_posterior_threshold = options.noise_posterior_threshold;
     diff_threshold_multiplier = options.diff_threshold_multiplier;
-    maxF = options.maxCarrierFrequency;
     if min_noise_threshold > 0
         min_noise_threshold = log10(min_noise_threshold.^2);
     else
@@ -85,43 +81,21 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     end
     
     
-    [newData,~,noiseThreshold,peakIdx] = filterDataAmplitudes(data,...
+    [newData,~,noiseThreshold,peakIdx] = filterDataAmplitudes_wm121416(data,...
         smoothingLength_noise,minRegionLength,maxNumGaussians_noise,...
         replicates_GMM,maxNumPeaks_GMM,diffThreshold*diff_threshold_multiplier,[],...
         min_noise_threshold,noise_posterior_threshold);
     
     
-    fprintf(1,'   Finding Carrier Frequencies\n');
     r = (diffThreshold-1)/2;
-    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); 
+    peakIdx = peakIdx(peakIdx > r & peakIdx < length(newData)-r); %added to eliminate edge cases
     N = length(peakIdx);
     normalizedPeaks = zeros(N,diffThreshold);
     peakAmplitudes = zeros(N,1);
-    carrierFrequencies = zeros(N,1);
-    minF = 5*ceil(1 / (2*r*dt*5));
-    freqs = minF:5:maxF;
-    freqs = freqs(freqs < .5/dt)';
-    medfiltLength = ceil((1/maxF)/dt);
-    parfor i=1:N
-        
+    for i=1:N
         a = newData(peakIdx(i) + (-r:r));
         peakAmplitudes(i) = sqrt(mean(a.^2));
         normalizedPeaks(i,:) = a./peakAmplitudes(i).*sign(newData(peakIdx(i)));
-        
-        a = medfilt1(a,medfiltLength);
-        q = fastWavelet_morlet_convolution_parallel(a,freqs,2*pi,dt);
-        maxQ = q(:,r+1);
-        maxIdxs = find(imregionalmax(maxQ));
-        [~,maxIdx] = max(maxQ(maxIdxs));
-        maxIdx = maxIdxs(maxIdx);
-        if isempty(maxIdx) || maxIdx <= 2 || maxIdx >= length(freqs) - 2
-            [~,maxIdx] = max(maxQ);
-            carrierFrequencies(i) = freqs(maxIdx);
-        else
-            idx = maxIdx + (-2:2);
-            carrierFrequencies(i) = findExtremumParabola(freqs(idx),maxQ(idx),2);
-        end
-
     end
     
     allPeakIdx = peakIdx;
@@ -151,13 +125,10 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
     
     groupings = cell(L,1);
     peakIdxGroup = cell(L,1);
-    freqIdxGroup = cell(L,1);
-    
     for i=1:L
         q = idx == i;
         groupings{i} = allNormalizedPeaks(q,:);
         peakIdxGroup{i} = allPeakIdx(q);
-        freqIdxGroup{i} = carrierFrequencies(q);
     end
     
     if isfield(outputData,'templateGroupings') && ~isempty(outputData.templateGroupings)
@@ -166,17 +137,14 @@ function [groupings,peakIdxGroup,likes,allPeakIdx,allNormalizedPeaks,noiseThresh
         M = length(k);
         groupings2 = cell(M,1);
         peakIdxGroup2 = cell(M,1);
-        freqIdxGroup2 = cell(M,1);
 
         for i=1:M
             groupings2{i} = cell2mat(groupings(outputData.templateGroupings==k(i)));
             peakIdxGroup2{i} = cell2mat(peakIdxGroup(outputData.templateGroupings==k(i)));
-            freqIdxGroup2{i} = cell2mat(freqIdxGroup(outputData.templateGroupings==k(i)));
         end
         
         groupings = groupings2;
         peakIdxGroup = peakIdxGroup2;
-        freqIdxGroup = freqIdxGroup2;
         
     end
     
